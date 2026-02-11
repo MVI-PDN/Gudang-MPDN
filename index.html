@@ -123,11 +123,15 @@ const CATEGORIES = Object.keys(ITEM_CATALOG);
 
 const INITIAL_DATA = [];
 
+// URL Backend yang sudah di-deploy (Default)
+const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzn0DES24MgkH7nMY2SG07t6BEiOd2vOyKJVKzYd6JX11DSjRuWz0XHdsdz0tQ734Cw0w/exec";
+
 export default function App() {
   // --- STATE MANAGEMENT ---
   const [activeTab, setActiveTab] = useState('dashboard');
   const [inventory, setInventory] = useState(INITIAL_DATA);
-  const [sheetUrl, setSheetUrl] = useState('');
+  // Set default sheetUrl langsung ke URL yang diberikan
+  const [sheetUrl, setSheetUrl] = useState(DEFAULT_API_URL);
   const [isSyncing, setIsSyncing] = useState(false);
   const [notification, setNotification] = useState(null);
 
@@ -151,7 +155,13 @@ export default function App() {
     const savedData = localStorage.getItem('warehouse_inventory');
     const savedUrl = localStorage.getItem('google_sheet_url');
     if (savedData) setInventory(JSON.parse(savedData));
-    if (savedUrl) setSheetUrl(savedUrl);
+    
+    // Prioritaskan URL yang disimpan user, jika tidak ada gunakan DEFAULT
+    if (savedUrl) {
+      setSheetUrl(savedUrl);
+    } else {
+      setSheetUrl(DEFAULT_API_URL);
+    }
   }, []);
 
   // Save data to LocalStorage whenever it changes
@@ -410,7 +420,7 @@ export default function App() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                   <h3 className="font-semibold text-gray-700">Data Stok Aktual</h3>
-                  <button onClick={() => alert('Untuk export ke Excel, silakan gunakan Google Sheet yang sudah terhubung.')} className="flex items-center gap-2 text-sm text-green-600 font-medium hover:text-green-700">
+                  <button onClick={() => window.open(sheetUrl, '_blank')} className="flex items-center gap-2 text-sm text-green-600 font-medium hover:text-green-700">
                     <FileSpreadsheet size={16} /> Lihat di Google Sheet
                   </button>
                 </div>
@@ -620,7 +630,7 @@ export default function App() {
                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <label className="block font-medium text-gray-700 mb-2">Google Apps Script Web App URL</label>
                   <p className="text-sm text-gray-500 mb-4">
-                    Masukkan URL dari Google Apps Script untuk menyimpan data secara otomatis ke Spreadsheet.
+                    URL Default telah terpasang. Anda dapat menggantinya jika membuat script baru.
                   </p>
                   
                   <div className="flex gap-2">
@@ -635,19 +645,31 @@ export default function App() {
                       onClick={handleSaveUrl}
                       className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
                     >
-                      Simpan
+                      Simpan Custom
                     </button>
                   </div>
+                  {sheetUrl !== DEFAULT_API_URL && (
+                    <button 
+                      onClick={() => {
+                        setSheetUrl(DEFAULT_API_URL);
+                        localStorage.removeItem('google_sheet_url');
+                        showNotification("Kembali ke URL Default");
+                      }}
+                      className="text-sm text-blue-600 mt-2 hover:underline"
+                    >
+                      Kembalikan ke Default
+                    </button>
+                  )}
                </div>
 
                <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                 <h3 className="font-bold text-blue-800 mb-2">Cara Menggunakan:</h3>
-                 <ol className="list-decimal list-inside text-sm text-blue-700 space-y-2">
-                   <li>Pilih Kategori Barang di menu Input/Stock Opname.</li>
-                   <li>Ketik nama barang, sistem akan otomatis menyarankan kode barang (TK-...) yang sesuai dengan kategori tersebut.</li>
-                   <li>Isi jumlah dan simpan.</li>
-                   <li>Untuk mengaktifkan penyimpanan ke Excel, ikuti panduan Google Apps Script yang diberikan sebelumnya.</li>
-                 </ol>
+                 <h3 className="font-bold text-blue-800 mb-2">Status Koneksi:</h3>
+                 <p className="text-sm text-blue-700 mb-2">
+                   Aplikasi menggunakan URL Backend berikut:
+                 </p>
+                 <code className="block bg-white p-2 rounded border border-blue-200 text-xs break-all text-gray-600 mb-4">
+                   {DEFAULT_API_URL}
+                 </code>
                </div>
             </div>
           )}
