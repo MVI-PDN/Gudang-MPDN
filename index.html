@@ -1,534 +1,647 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GudangPro - Stock Opname</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Babel untuk memproses JSX di browser -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+import React, { useState, useEffect } from 'react';
+import { 
+  Plus, 
+  Trash2, 
+  Package, 
+  ArrowLeftRight, 
+  Tag, 
+  Save, 
+  RotateCcw, 
+  CheckCircle2,
+  ChevronRight, 
+  ChevronLeft, 
+  Barcode, 
+  Cpu, 
+  MapPin, 
+  ClipboardList, 
+  Truck, 
+  Box, 
+  Hash, 
+  X, 
+  ArrowRight, 
+  Activity 
+} from 'lucide-react';
 
-    <!-- React & Libraries via ESM CDN -->
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-          "lucide-react": "https://esm.sh/lucide-react@0.292.0"
-        }
+// --- KOMPONEN LOGO PROFESIONAL ---
+const ProLogo = ({ light = false }) => (
+  <div className="flex items-center gap-3">
+    <div className={`relative flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-lg ${light ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'} shadow-sm`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+    </div>
+    <div className="flex flex-col text-left">
+      <span className={`text-lg font-bold tracking-tight leading-none ${light ? 'text-white' : 'text-slate-800'}`}>MV-LOGISTIK</span>
+      <span className={`text-[10px] font-semibold tracking-[0.15em] uppercase ${light ? 'text-blue-200' : 'text-blue-600'}`}>Solusi Inventaris Terpadu</span>
+    </div>
+  </div>
+);
+
+// --- KOMPONEN FOOTER GLOBAL ---
+const GlobalFooter = () => (
+  <footer className="mt-12 mb-8 text-center animate-in fade-in duration-1000">
+    <div className="inline-flex flex-col items-center gap-2">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">
+        Manajemen Inventaris Microvision
+      </p>
+      <div className="flex items-center gap-2">
+        <span className="h-[1px] w-4 bg-slate-200"></span>
+        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest bg-white border border-slate-100 px-3 py-1 rounded-full">
+          Versi 1.7.5
+        </span>
+        <span className="h-[1px] w-4 bg-slate-200"></span>
+      </div>
+    </div>
+  </footer>
+);
+
+// --- DATA TAKSONOMI PRODUK ---
+const PRODUCT_TAXONOMY = {
+  // --- KATEGORI UNIT (PG-UNIT) ---
+  'MVIFCI': { 
+    type: 'UNIT', 
+    isBatchMode: true,
+    models: { 'Standard': ['P1.86', 'P2.50', 'P4.00'] } 
+  },
+  'MVIDCI': { 
+    type: 'UNIT', 
+    isBatchMode: true,
+    models: { 'Standard': ['P1.86', 'P1.50', 'P2.00', 'P2.50'] } 
+  },
+  'MVIFCO': { 
+    type: 'UNIT', 
+    isBatchMode: true,
+    models: { 'Standard': ['P4.00', 'P5.00', 'P6.00', 'P8.00', 'P10.00'] } 
+  },
+  'KIOSK': { 
+    type: 'UNIT', 
+    isLockedQty: true, 
+    models: { 'SLIM': [], 'Standard': [] } 
+  },
+  'IFP': { 
+    type: 'UNIT', 
+    isLockedQty: true, 
+    models: { 
+      'MICROVISION': ['65"', '75"', '86"'], 
+      'NEWLINE': ['65"', '75"', '86"'], 
+      'PHILIPS': ['65"', '75"', '86"'] 
+    } 
+  },
+  'VDW': { 
+    type: 'UNIT', 
+    isLockedQty: true, 
+    models: { 
+      'MICROVISION': ['4935', '5535', '5517', '5588'], 
+      'PHILIPS': ['49BDL2105X-ik', '55BDL2105X-ik'] 
+    } 
+  },
+
+  // --- KATEGORI PART (PG-PART) ---
+  'Module': { type: 'PART', models: { 'MVIMDI3218': ['P1.86', 'P1.50', 'P2.00', 'P2.50'], 'MVIMDI1616': ['P2.50'], 'MVIMDI3216': ['P1.86', 'P2.50', 'P4.00'], 'MVIDI3216': ['P2.50'], 'MVIMDO3216': ['P4.00', 'P5.00', 'P6.00', 'P8.00', 'P10.00'] } },
+  'Receiving Card': { type: 'PART', models: { 'MRV416': [], 'MRV432': [], 'MRV532': [] } },
+  'Power Supply': { type: 'PART', models: { 'FPSU40A': [], 'PSU40A': [], 'PSU60A': [] } },
+  'Kabel': { type: 'PART', models: { 'LAN': ['LAN1.0', 'LAN1.5', 'LAN2.0'], 'FLAT': ['20 CM', '50 CM', '70 CM', '80 CM'], 'POWER': ['5V TO MODULE', '73 CM DCI', '58 CM DCI2.5'] } },
+  'Sparepart': { type: 'PART', models: { 'IC-MDL': [], 'LED-LAMP': [], 'FACE MASK': [] } },
+  'Baut': { type: 'PART', models: { 'MAGNET': [], 'SCREW MDL': [] } },
+  'Konektor': { type: 'PART', models: { 'CONNECTOR': [], 'TRAY': [], 'PCS': [] } },
+  'Bracket': { type: 'PART', models: { 'MVICCIL': [], 'FRAME 640X480': [], 'STAND KIOSK': [] } },
+  'Karet': { type: 'PART', models: { 'RING WTR-PRF': [] } },
+  'Kardus': { type: 'PART', models: { 'KARDUS DCI': [] } },
+  'Pallet': { type: 'PART', models: { 'PALLET FCO': [] } }
+};
+
+const App = () => {
+  const [isLanding, setIsLanding] = useState(true);
+  const [activeTab, setActiveTab] = useState('logistics');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [pgType, setPgType] = useState(null); 
+  const [errors, setErrors] = useState({});
+  
+  const [formData, setFormData] = useState({
+    pgNumber: '',
+    date: new Date().toISOString().split('T')[0],
+    originWarehouse: '', 
+    destinationWarehouse: '', 
+    category: '',
+    model: '', 
+    specification: '',
+    productName: '',
+    quantity: 1,
+    unit: 'Unit',
+    pic: '',
+    notes: '',
+    rawSN: '' 
+  });
+
+  const handleStartMutasi = (type) => {
+    setPgType(type);
+    setIsLanding(false);
+    setActiveTab('logistics');
+    
+    // Generate nomor awal tapi bisa diedit
+    const year = new Date().getFullYear();
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    setFormData(prev => ({ 
+      ...prev, 
+      pgNumber: `PG/${type}/${year}/${rand}`,
+      // Reset produk saat berganti mode
+      category: '',
+      model: '',
+      specification: '',
+      productName: '',
+      rawSN: '',
+      quantity: 1
+    }));
+  };
+
+  const handleCategoryChange = (val) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      category: val, 
+      model: '', 
+      specification: '', 
+      productName: val,
+      rawSN: '', 
+      quantity: 1,
+      unit: pgType === 'UNIT' ? 'Unit' : 'Pcs'
+    }));
+  };
+
+  const handleModelChange = (val) => {
+    const isBatch = PRODUCT_TAXONOMY[formData.category]?.isBatchMode;
+    setFormData(prev => ({ 
+      ...prev, 
+      model: val, 
+      productName: isBatch ? `${prev.category}-${val}` : `${prev.category} ${val}`
+    }));
+  };
+
+  const handleSpecChange = (val) => {
+    setFormData(prev => {
+      const isBatch = PRODUCT_TAXONOMY[prev.category]?.isBatchMode;
+      let newName = "";
+      
+      if (isBatch) {
+        const cleanSpec = val.startsWith('P') ? val.substring(1) : val;
+        newName = `${prev.category}-${prev.model}-${cleanSpec}`;
+      } else {
+        newName = `${prev.category} ${prev.model} ${val}`;
       }
-    </script>
+
+      return { 
+        ...prev, 
+        specification: val, 
+        productName: newName 
+      };
+    });
+  };
+
+  const handleSNChange = (val) => {
+    const isLocked = PRODUCT_TAXONOMY[formData.category]?.isLockedQty;
     
-    <style>
-        /* Custom scrollbar for cleaner look */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #3b82f6;
-            width: 20px;
-            height: 20px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans">
-    <div id="root"></div>
+    if (isLocked) {
+      const lines = val.split('\n').filter(line => line.trim() !== '');
+      setFormData(prev => ({
+        ...prev,
+        rawSN: val,
+        quantity: lines.length > 0 ? lines.length : 0
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, rawSN: val }));
+    }
+  };
 
-    <!-- Perhatikan: type="text/babel" dan data-type="module" sangat PENTING -->
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-            LayoutDashboard, PackagePlus, PackageMinus, ClipboardList, 
-            Settings, Save, RefreshCw, FileSpreadsheet, Search, Filter, 
-            Trash2, Box, Cable, Cpu, Monitor, Zap, Layers, Wind 
-        } from 'lucide-react';
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    if (!formData.pgNumber) newErrors.pgNumber = true;
+    if (!formData.originWarehouse) newErrors.originWarehouse = true;
+    if (!formData.destinationWarehouse) newErrors.destinationWarehouse = true;
+    if (!formData.category) newErrors.category = true;
+    if (!formData.model) newErrors.model = true;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      if (newErrors.pgNumber || newErrors.originWarehouse || newErrors.destinationWarehouse) setActiveTab('logistics');
+      else setActiveTab('product');
+      return;
+    }
+    
+    setShowSuccess(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+        setShowSuccess(false);
+        setIsLanding(true);
+        setFormData({
+            pgNumber: '',
+            date: new Date().toISOString().split('T')[0],
+            originWarehouse: '', 
+            destinationWarehouse: '', 
+            category: '',
+            model: '',
+            specification: '',
+            productName: '',
+            quantity: 1,
+            unit: 'Unit',
+            pic: '',
+            notes: '',
+            rawSN: '' 
+        });
+    }, 2500);
+  };
 
-        // --- DATA KATALOG BARANG (DATA REF) ---
-        const ITEM_CATALOG = {
-            "Inverter": [
-                "TK-INV-SCREEN-NET-CVR-L-AXPERT-SMPL", "TK-INV-RMT-BOX-BOTTOM-AXPERT-SMPL", 
-                "TK-INV-TOP-CVR-AXPERT-SMPL", "TK-INV-MOULD-WIRE-CVR-AXPERT-SMPL", 
-                "TK-INV-CPCBA-SMPL", "TK-INVERTER INDUCTANCE FIXED INFINISOLAR", 
-                "TK-INVERTER SCREEN NET COVER R HAUS", "TK-INVERTER SCREEN NET COVER L HAUS", 
-                "TK-INVERTER COMM FIXED PLATE HAUS", "TK-INVERTER COMM COVER HAUS", 
-                "TK-INVERTER REMOTE BOX BOTTOM HAUS", "TK-INVERTER BOTTOM INFINI", 
-                "TK-INVERTER TOP COVER HAUS", "TK-INVERTER MOULD WIRE COVER HAUS", 
-                "TK-INVERTER MOULD REAR PANEL INFINI", "TK-INV-HANGER-SMPL", 
-                "TK-PACKAGING INVERTER", "TK-PCB'Y-COMM", "TK-PCB'Y-IND", 
-                "TK-CORE-FERRITE-RJ45", "TK-CBL-PARALLEL", "TK-RMT-DISP", 
-                "TK-CBL-RJ45-RS232", "TK-AWG22-1500-BLK-RED", "TK-MPCBA-INV-6KW", 
-                "TK-INV-IND-FIXED-INFINISOLAR-SMPL", "TK-INV-SCREEN-NET-CVR-R-AXPERT-SMPL"
-            ],
-            "Kabel": [
-                "TK-CLR-CBL-30CM-26PIN", "TK-CLR-CBL-35CM-26PIN", "TK-CONNECTOR", 
-                "TK-CLR-CBL-45CM-26PIN", "TK-LAN1.0", "TK-CLR-CBL-55CM-26PIN", 
-                "TK-PWR-CBL-58CM-DCI", "2.55V POWER CABLE 73 CM DCI", 
-                "TK-COLOR CABLES FLAT", "TK-CLR-CBL-35CM-16PIN", "TK-CLR-CBL-55CM-16PIN", 
-                "TK-COLOR CABLE", "TK-CLR-CBL-60CM-26PIN", "TK-CLR-CBL-CON-80CM", 
-                "TK-CLR-CBL-CON-50CM", "TK-CLR-CBL-CON-70CM", "TK-5V-PWR-MDL-LKL", 
-                "TK-CONNECTOR (TRAY)", "TK-LAN1.5", "TK-5V POWER CABLE", 
-                "TK-5V POWER TO MODUL", "TK-LAN2.0", "TK-POWER CABLE", 
-                "TK-POWER CARD", "TK-CABLE FLAT"
-            ],
-            "Kardus": [
-                "TK-PACKAGING-55\"-VDW-MVI", "TK-KARDUS DCI", "TK-PACKAGING", 
-                "TK-PACKAGING SET KIOSK MVI", "TK-PACKAGING SET SLIM KIOSK MVI", 
-                "TK-PACKAGING SET 49\" VDW", "TK-PACKAGING SET 75\" IFP MVI", 
-                "TK-PACKAGING SET 49\" VDW PHI", "TK-PACKAGING SET 65\" NEWLINE IFP"
-            ],
-            "KIOSK": [
-                "TK-MV-TK55-SPCC", "TK-STB-SK-MVI", "TK-BS-SK-MVI", 
-                "TK-PB-SK-MVI (BACKUP)", "TK-MBA-SK-MV (BACKUP)", "TK-BC-SK-MVI"
-            ],
-            "Module": [
-                "TK-MVIMDI3216-1.86-2412", "TK-MVIMDI3218-2.50-2507", "TK-MVIMDI1616-2.50-0000", 
-                "TK-MVIMDI3216-2.50-2402", "TK-MVIMDI3216-1.86-2501", "TK-MVIMDI3216-1.86-2310", 
-                "TK-MVIDI3216-2.50-2410", "TK-MVIMDI3216-4.00-2412", "TK-MVIMDI3216-1.86-2405", 
-                "TK-MVIMDO3216-5.00-2405", "TK-MVIMDO3216-5.00-2403", "TK-MVIMDO3216-4.00-2511", 
-                "TK-MVIMDI1616-2.50-2306", "TK-MVIMDO3216-5.00-2406", "TK-MVIMDO3216-5.00-2310", 
-                "TK-MVIMDI3216-2.50-2403", "TK-MVIMDI3218-1.86-0000", "TK-MVIMDO3216-5.00-0000", 
-                "TK-MVIMDI3216-1.86-2406", "TK-MVIMDO3216-10.00-2405", "TK-MVIMDI3216-2.50-2512", 
-                "TK-MVIMDI3218-1.86-2507", "TK-MVIMDI3216-4.00-2409", "TK-MVIMDO3216-5.00-2404", 
-                "TK-MVIMDI3216-4.00-2403", "TK-MVIMDO3216-4.00-2510", "TK-MVIMDI3216-4.00-2311", 
-                "TK-MVIMDO3216-10.00-2403", "TK-MVIMDO3216-5.00-2512", "TK-MVIMDI1616-2.50-2311", 
-                "TK-MVIMDI1616-2.50-2312", "TK-MVIMDI3218-1.50-0000", "TK-MVIMDI3216-2.50-2407", 
-                "TK-MVIMDO3216-8.00-2310", "TK-MVIMDI3216-1.86-0000", "TK-MVIMDO3216-6.67-2310", 
-                "TK-MVIMDI3218-1.20-0000", "TK-MVIMDI3216-4.00-0000", "TK-MVIMDI3218-2.00-0000", 
-                "TK-MVIMDI1616-2.50-2505", "TK-MVIMDO3216-4.00-2310", "TK-MVIMDI3218-2.50-0000", 
-                "TK-MVIMDI3216-4.00-2310", "TK-MVIMDI3216-2.50-2411", "TK-MVIMDI3216-2.50-2406", 
-                "TK-MVIMDI3216-2.50-2410", "TK-MVIMDO3216-10.00-0000", "TK-MVIMDO3216-4.00-2512", 
-                "TK-MVIMDI1616-2.50-2410", "TK-MVIMDO3216-5.00-2402", "TK-MVIMDO3216-4.00-2411", 
-                "TK-MVIMDO3216-10.00-2406", "TK-MVIMDI3216-2.50-2511", "TK-MVIMDI3216-1.86-2411", 
-                "TK-MVIMDO3216-5.00-2511", "TK-MVIMDO3216-10.00-2410"
-            ],
-            "Monitor": ["DN-LCDP-5535-VDW"],
-            "PSU": ["TK-PSU40A", "TK-FPSU40A", "TK-PSU60A"],
-            "RC": ["TK-MRV532-3218", "TK-MRV432-3218", "TK-MRV416-0000"],
-            "Sparepart": [
-                "TK-IC-MDL-ODR", "TK-FACE-MASK", "TK-LED-LAMP-MDL-ODR", "TK-CONNECTOR (PCS)", 
-                "TK-WTR-PRF-RING", "TK-IC-MDL", "TK-MAGNET", "TK-LED-LAMP-MDL", 
-                "TK-SCRW-MDL-ODR", "TK-STICKER TT-75225", "TK-STICKER TT-65225"
-            ],
-            "VDW": [
-                "TK-PACKAGING-55\"-VDW-MVI", "TK-BCV-SK-MVI", "TK-LCDP-4935-VDW", 
-                "TK-LCDP-5535-VDW", "TK-LCDP-5517-VDW", "TK-LCDP-5588-VDW", 
-                "TK-VDW-BCV-MVI", "TK-PSB-4935-VDW", "TK-PSB-5535-VDW", 
-                "TK-PSB-5588-VDW", "TK-PSB-5517-VDW", "TK-MV-4935-VDW", 
-                "TK-MV-5535-VDW", "TK-MV-5517-VDW", "TK-MV-5588-VDW", 
-                "TK-RC-VDW4935-VDW REAR COVER"
-            ],
-            "WIP": ["TK-WIP-FCI", "TK-WIP-DCI", "TK-WIP-FCO"],
-            "Bracket": [
-                "TK-STAND KIOSK CABINET LED 3X2", "TK-STAND KIOSK CABINET LED",
-                "TK-FRAME-CCIL-A-640X480", "TK-MVICCIL"
-            ],
-            "Cabinet": [
-                "TK-MVIFCI-SMPL", "TK-MVIFCO-SMPL", "TK-MVIFCIL", "TK-MVIFCIP",
-                "TK-MVIFCO", "TK-MVIDCI", "TK-MVIFCI", "TK-MVIDCI New"
-            ],
-            "Air Purifier": [
-                "AIR PURIFIER - DEMO", "TK-PACKAGING AIR PURIFIER"
-            ],
-            "FCO": ["TK-PALET FCO"],
-            "FST": [
-                "TK-FST", "TK-VH-IFP", "TK-MV-L4286-FST",
-                "TK-VESA HANGING IFP", "TK-VESA HANGING VIDEOWALL"
-            ],
-            "IFP": [
-                "TK-MTPCA-MVQ75", "TK-MTPCA-MVQ86", "TK-BACK ENCLOSURE CASING 65\" NEWLINE",
-                "TK-POWER SUPPLY BOARD 75", "TK-POWER SUPPLY BOARD 86",
-                "TK-MBA-MVQ75", "TK-MBA-MVQ86", "TK-IFP-BCV-PHI", "TK-IFP-BCV-NL"
-            ],
-            "Others": []
-        };
+  const currentCategory = PRODUCT_TAXONOMY[formData.category];
+  const isBatchMode = currentCategory?.isBatchMode || false;
+  const isLockedQty = currentCategory?.isLockedQty || false;
+  const needsSN = pgType === 'UNIT' && formData.category !== '';
 
-        const CATEGORIES = Object.keys(ITEM_CATALOG);
-        const INITIAL_DATA = [];
-        const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzn0DES24MgkH7nMY2SG07t6BEiOd2vOyKJVKzYd6JX11DSjRuWz0XHdsdz0tQ734Cw0w/exec";
+  const TabBtn = ({ id, icon: Icon, label }) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(id)}
+      className={`flex-shrink-0 flex items-center gap-2.5 px-6 py-4 border-b-2 transition-all text-sm font-medium ${
+        activeTab === id ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+      }`}
+    >
+      <Icon size={16} /> {label}
+    </button>
+  );
 
-        function App() {
-            // --- STATE MANAGEMENT ---
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [inventory, setInventory] = useState(INITIAL_DATA);
-            const [sheetUrl, setSheetUrl] = useState(DEFAULT_API_URL);
-            const [isSyncing, setIsSyncing] = useState(false);
-            const [notification, setNotification] = useState(null);
+  // --- HALAMAN LANDING ---
+  if (isLanding) {
+    return (
+      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-6 flex-col">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-16 animate-in fade-in zoom-in duration-700">
+            <div className="flex justify-center mb-6">
+              <ProLogo />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-3 text-balance">Sistem Manajemen Logistik</h1>
+            <p className="text-slate-500 font-medium italic">Silakan pilih jenis dokumen mutasi untuk memulai transaksi</p>
+          </div>
 
-            // Form States
-            const [formData, setFormData] = useState({
-                type: 'IN', // IN, OUT, OPNAME
-                category: CATEGORIES[0],
-                name: '',
-                variant: '',
-                uom: 'Pcs',
-                qty: 0,
-                location: '',
-                notes: ''
-            });
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+            <button 
+              onClick={() => handleStartMutasi('UNIT')}
+              className="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left flex flex-col items-start gap-6"
+            >
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                <Box size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">PG-UNIT</h2>
+                <p className="text-slate-500 mt-2 text-sm leading-relaxed font-medium">Mutasi unit Rakitan & Monitor (MVIFCI, MVIDCI, MVIFCO, Kiosk, IFP, VDW).</p>
+              </div>
+              <div className="mt-auto flex items-center text-blue-600 font-bold text-sm gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                Mulai Transaksi Unit <ArrowRight size={18} />
+              </div>
+            </button>
 
-            const [suggestions, setSuggestions] = useState([]);
+            <button 
+              onClick={() => handleStartMutasi('PART')}
+              className="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-slate-800 hover:shadow-xl transition-all text-left flex flex-col items-start gap-6"
+            >
+              <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                <Cpu size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">PG-PART</h2>
+                <p className="text-slate-500 mt-2 text-sm leading-relaxed font-medium">Mutasi suku cadang LED, kabel, PSU, modul, dan aksesoris lainnya.</p>
+              </div>
+              <div className="mt-auto flex items-center text-slate-900 font-bold text-sm gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                Mulai Transaksi Part <ArrowRight size={18} />
+              </div>
+            </button>
+          </div>
+        </div>
+        <GlobalFooter />
+      </div>
+    );
+  }
 
-            // Load data
-            useEffect(() => {
-                const savedData = localStorage.getItem('warehouse_inventory');
-                const savedUrl = localStorage.getItem('google_sheet_url');
-                if (savedData) setInventory(JSON.parse(savedData));
-                if (savedUrl) setSheetUrl(savedUrl);
-                else setSheetUrl(DEFAULT_API_URL);
-            }, []);
+  // --- HALAMAN FORM ---
+  return (
+    <div className="min-h-screen bg-[#f8fafc] pb-10 flex flex-col text-left">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="cursor-pointer" onClick={() => setIsLanding(true)}>
+            <ProLogo />
+          </div>
+          <div className="flex items-center gap-3">
+            {/* PENGALIH MODE (UNIT / PART) DI NAVBAR */}
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button 
+                onClick={() => handleStartMutasi('UNIT')}
+                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${pgType === 'UNIT' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                PG-UNIT
+              </button>
+              <button 
+                onClick={() => handleStartMutasi('PART')}
+                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${pgType === 'PART' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                PG-PART
+              </button>
+            </div>
+            <button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
+              <Save size={16}/> Terbitkan Dokumen
+            </button>
+          </div>
+        </div>
+      </nav>
 
-            // Save data
-            useEffect(() => {
-                localStorage.setItem('warehouse_inventory', JSON.stringify(inventory));
-            }, [inventory]);
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-8 flex-grow text-slate-700">
+        {showSuccess && (
+          <div className="mb-6 p-4 bg-emerald-500 text-white rounded-xl flex items-center gap-4 animate-in slide-in-from-top-4 shadow-lg border border-emerald-400">
+            <CheckCircle2 size={24}/>
+            <div className="text-sm text-left">
+              <p className="font-bold">Transaksi Berhasil!</p>
+              <p className="opacity-90 font-medium">Dokumen mutasi {formData.pgNumber} telah dijana dalam pangkalan data.</p>
+            </div>
+          </div>
+        )}
 
-            // Suggestions
-            useEffect(() => {
-                const catItems = ITEM_CATALOG[formData.category] || [];
-                setSuggestions(catItems);
-            }, [formData.category]);
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+          <div className="flex border-b bg-slate-50/30 overflow-x-auto scrollbar-hide">
+            <TabBtn id="logistics" icon={Truck} label="Logistik" />
+            <TabBtn id="product" icon={Package} label="Detail Barang" />
+            <TabBtn id="notes" icon={ClipboardList} label="Catatan Akhir" />
+          </div>
 
-            const showNotification = (message, type = 'success') => {
-                setNotification({ message, type });
-                setTimeout(() => setNotification(null), 3000);
-            };
-
-            const handleInputChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
-            };
-
-            const sendToGoogleSheet = async (dataPayload) => {
-                if (!sheetUrl) return;
-                setIsSyncing(true);
-                try {
-                    await fetch(sheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dataPayload)
-                    });
-                    console.log("Data dikirim ke sheet");
-                } catch (error) {
-                    console.error("Gagal sync ke sheet", error);
-                    showNotification("Gagal sinkronisasi ke Google Sheet", "error");
-                } finally {
-                    setIsSyncing(false);
-                }
-            };
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                
-                const rawQty = parseInt(formData.qty);
-                const validQty = isNaN(rawQty) ? 0 : rawQty;
-
-                const newEntry = {
-                    id: Date.now(),
-                    date: new Date().toISOString().split('T')[0],
-                    ...formData,
-                    qty: validQty
-                };
-
-                let updatedInventory = [...inventory];
-                
-                if (formData.type === 'IN') {
-                    const existingIndex = updatedInventory.findIndex(item => 
-                        item.name.toLowerCase() === newEntry.name.toLowerCase() && 
-                        item.variant.toLowerCase() === newEntry.variant.toLowerCase()
-                    );
-
-                    if (existingIndex >= 0) {
-                        updatedInventory[existingIndex].stockSystem += newEntry.qty;
-                        updatedInventory[existingIndex].stockPhysical += newEntry.qty;
-                        if(newEntry.location) updatedInventory[existingIndex].location = newEntry.location;
-                    } else {
-                        updatedInventory.push({
-                            id: newEntry.id,
-                            date: newEntry.date,
-                            category: newEntry.category,
-                            name: newEntry.name,
-                            variant: newEntry.variant,
-                            uom: newEntry.uom,
-                            stockSystem: newEntry.qty,
-                            stockPhysical: newEntry.qty,
-                            location: newEntry.location
-                        });
-                    }
-                } else if (formData.type === 'OUT') {
-                    const existingIndex = updatedInventory.findIndex(item => 
-                        item.name.toLowerCase() === newEntry.name.toLowerCase() && 
-                        item.variant.toLowerCase() === newEntry.variant.toLowerCase()
-                    );
-
-                    if (existingIndex >= 0) {
-                        if (updatedInventory[existingIndex].stockSystem < newEntry.qty) {
-                            showNotification("Stok tidak mencukupi!", "error");
-                            return;
-                        }
-                        updatedInventory[existingIndex].stockSystem -= newEntry.qty;
-                        updatedInventory[existingIndex].stockPhysical -= newEntry.qty;
-                    } else {
-                        showNotification("Barang tidak ditemukan di stok!", "error");
-                        return;
-                    }
-                } else if (formData.type === 'OPNAME') {
-                    const existingIndex = updatedInventory.findIndex(item => 
-                        item.name.toLowerCase() === newEntry.name.toLowerCase() && 
-                        item.variant.toLowerCase() === newEntry.variant.toLowerCase()
-                    );
-
-                    if (existingIndex >= 0) {
-                        updatedInventory[existingIndex].stockPhysical = newEntry.qty;
-                    } else {
-                        updatedInventory.push({
-                            id: newEntry.id,
-                            date: newEntry.date,
-                            category: newEntry.category,
-                            name: newEntry.name,
-                            variant: newEntry.variant,
-                            uom: newEntry.uom,
-                            stockSystem: 0,
-                            stockPhysical: newEntry.qty,
-                            location: newEntry.location
-                        });
-                    }
-                }
-
-                setInventory(updatedInventory);
-                
-                sendToGoogleSheet({
-                    action: formData.type,
-                    data: newEntry,
-                    timestamp: new Date().toLocaleString()
-                });
-
-                showNotification(`Transaksi ${formData.type} berhasil disimpan!`);
-                
-                setFormData(prev => ({
-                    ...prev,
-                    qty: 0,
-                    notes: ''
-                }));
-            };
-
-            const handleSaveUrl = () => {
-                localStorage.setItem('google_sheet_url', sheetUrl);
-                showNotification("URL Google Sheet tersimpan!");
-            };
-
-            const handleClearData = () => {
-                if(window.confirm("Yakin hapus data lokal?")) {
-                    setInventory([]);
-                    localStorage.removeItem('warehouse_inventory');
-                    showNotification("Data lokal dibersihkan");
-                }
-            }
-
-            // Components
-            const StatCard = ({ title, value, color, icon: Icon }) => (
-                <div className={`p-4 rounded-xl shadow-sm border border-gray-100 bg-white flex items-center space-x-4`}>
-                    <div className={`p-3 rounded-lg ${color} text-white`}>
-                        <Icon size={24} />
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleSubmit}>
+              
+              {/* TAB 1: LOGISTIK */}
+              {activeTab === 'logistics' && (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">No-PG</label>
+                      <div className="relative">
+                        <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18}/>
+                        <input 
+                          type="text" 
+                          placeholder="Ketik No-PG manual..."
+                          className={`w-full p-3.5 pl-11 bg-white rounded-xl border transition-all font-mono font-bold text-blue-600 outline-none ${errors.pgNumber ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                          value={formData.pgNumber} 
+                          onChange={(e) => setFormData(p => ({ ...p, pgNumber: e.target.value }))}
+                        />
+                      </div>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">{title}</p>
-                        <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Tanggal Mutasi</label>
+                      <input type="date" value={formData.date} onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))} className="w-full p-3.5 rounded-xl border border-slate-200 font-semibold outline-none focus:border-blue-500" />
                     </div>
+                  </div>
+
+                  <div className="bg-slate-50/50 p-6 md:p-8 rounded-2xl border border-slate-200 relative">
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full border border-slate-200 flex items-center justify-center text-blue-600 hidden md:flex z-10 shadow-sm">
+                      <ArrowLeftRight size={18} />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2 text-left">
+                        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide"><MapPin size={14} className="text-red-500"/> Gudang Asal</label>
+                        <input 
+                          type="text"
+                          placeholder="Masukkan nama gudang asal..."
+                          className={`w-full p-3.5 bg-white rounded-xl border transition-all font-medium outline-none ${errors.originWarehouse ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                          value={formData.originWarehouse}
+                          onChange={(e) => setFormData(p => ({ ...p, originWarehouse: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="space-y-2 text-left">
+                        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide"><MapPin size={14} className="text-emerald-500"/> Gudang Destinasi</label>
+                        <input 
+                          type="text"
+                          placeholder="Masukkan gudang tujuan..."
+                          className={`w-full p-3.5 bg-white rounded-xl border transition-all font-medium outline-none ${errors.destinationWarehouse ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                          value={formData.destinationWarehouse}
+                          onChange={(e) => setFormData(p => ({ ...p, destinationWarehouse: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button type="button" onClick={() => setActiveTab('product')} className="px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-black transition-all shadow-lg">
+                      Lanjut ke Produk <ChevronRight size={18}/>
+                    </button>
+                  </div>
                 </div>
-            );
+              )}
 
-            return (
-                <div className="min-h-screen flex flex-col md:flex-row">
-                    {/* Sidebar */}
-                    <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col">
-                        <div className="p-6 border-b border-gray-100 hidden md:block">
-                            <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
-                                <PackagePlus /> 
-                                <span>GudangPro</span>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-1">Sistem Stock Opname</p>
+              {/* TAB 2: PRODUCT DETAIL */}
+              {activeTab === 'product' && (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Kategori</label>
+                      <select 
+                        className={`w-full p-3.5 rounded-xl border bg-white font-medium outline-none ${errors.category ? 'border-red-400' : 'border-slate-200 focus:border-blue-500'}`}
+                        value={formData.category}
+                        onChange={(e) => handleCategoryChange(e.target.value)}
+                      >
+                        <option value="">-- Pilih Kategori --</option>
+                        {Object.keys(PRODUCT_TAXONOMY).filter(cat => PRODUCT_TAXONOMY[cat].type === pgType).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                        {isBatchMode ? "Batch" : "Model / Varian"}
+                      </label>
+                      {isBatchMode ? (
+                        <input 
+                          type="text"
+                          placeholder="Ketik batch manual..."
+                          className={`w-full p-3.5 bg-white rounded-xl border transition-all font-medium outline-none ${errors.model ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                          value={formData.model}
+                          onChange={(e) => handleModelChange(e.target.value)}
+                        />
+                      ) : (
+                        <select 
+                          disabled={!formData.category || Object.keys(PRODUCT_TAXONOMY[formData.category]?.models || {}).length === 0}
+                          className={`w-full p-3.5 rounded-xl border transition-all font-medium outline-none ${errors.model ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'} disabled:opacity-50 disabled:bg-slate-50`}
+                          value={formData.model}
+                          onChange={(e) => handleModelChange(e.target.value)}
+                        >
+                          <option value="">-- {(!formData.category || Object.keys(PRODUCT_TAXONOMY[formData.category]?.models || {}).length === 0) ? 'N/A' : 'Pilih Varian'} --</option>
+                          {formData.category && Object.keys(PRODUCT_TAXONOMY[formData.category].models).map(mod => <option key={mod} value={mod}>{mod}</option>)}
+                        </select>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sub Varian</label>
+                      <select 
+                        disabled={!formData.model || (formData.category && !isBatchMode && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.length === 0)}
+                        className="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 disabled:opacity-50 font-medium outline-none"
+                        value={formData.specification}
+                        onChange={(e) => handleSpecChange(e.target.value)}
+                      >
+                        <option value="">-- {isBatchMode ? 'Pilih Pitch' : 'Pilih Sub Varian'} --</option>
+                        {formData.category && (
+                          isBatchMode 
+                            ? PRODUCT_TAXONOMY[formData.category].models['Standard']?.map(s => <option key={s} value={s}>{s}</option>)
+                            : PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-slate-900 rounded-xl shadow-inner">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 block tracking-widest leading-none">Barang Teridentifikasi</label>
+                    <div className="text-white font-semibold text-lg flex items-center gap-3 uppercase">
+                      <Box size={20} className="text-blue-400" />
+                      {formData.productName || "Menunggu pemilihan barang..."}
+                    </div>
+                  </div>
+
+                  {needsSN && (
+                    <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
+                      <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2 text-blue-900">
+                            <Hash size={18} />
+                            <h3 className="font-bold text-sm">Masukan Serial Number (SN)</h3>
+                          </div>
+                          {isLockedQty && (
+                             <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-1 rounded-md uppercase tracking-wider">Mode Per Unit</span>
+                          )}
                         </div>
-                        
-                        <nav className="flex-1 p-2 md:p-4 space-x-2 md:space-x-0 md:space-y-2 flex md:flex-col overflow-x-auto">
-                            <button onClick={() => setActiveTab('dashboard')} className={`flex-shrink-0 flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <LayoutDashboard size={20} />
-                                <span className="hidden md:inline">Dashboard</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('input'); setFormData(p => ({...p, type: 'IN'})); }} className={`flex-shrink-0 flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'input' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <PackagePlus size={20} />
-                                <span className="hidden md:inline">Barang Masuk</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('output'); setFormData(p => ({...p, type: 'OUT'})); }} className={`flex-shrink-0 flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'output' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <PackageMinus size={20} />
-                                <span className="hidden md:inline">Barang Keluar</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('opname'); setFormData(p => ({...p, type: 'OPNAME'})); }} className={`flex-shrink-0 flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'opname' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <ClipboardList size={20} />
-                                <span className="hidden md:inline">Stock Opname</span>
-                            </button>
-                            <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <Settings size={20} />
-                                <span className="hidden md:inline">Pengaturan</span>
-                            </button>
-                        </nav>
-                         <div className="p-4 border-t border-gray-100 hidden md:block">
-                           <button onClick={handleClearData} className="w-full flex items-center justify-center gap-2 text-red-500 text-sm hover:bg-red-50 p-2 rounded">
-                             <Trash2 size={16}/> Reset Data
-                           </button>
+
+                        <div className="space-y-2">
+                           <textarea 
+                             rows={isLockedQty ? 6 : 2}
+                             placeholder={isLockedQty ? "Tekan ENTER untuk baris SN berikutnya..." : "Ketik rentang SN (Contoh: 01-10)..."}
+                             className="w-full p-4 rounded-xl border border-slate-200 font-mono text-sm focus:border-blue-500 outline-none resize-none shadow-inner bg-white"
+                             value={formData.rawSN}
+                             onChange={(e) => handleSNChange(e.target.value)}
+                           ></textarea>
+                           {isLockedQty && (
+                             <p className="text-[10px] text-slate-400 font-medium italic">*Jumlah akan terkunci otomatis mengikuti jumlah baris SN yang diisi.</p>
+                           )}
                         </div>
-                    </aside>
+                      </div>
 
-                    {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto h-screen bg-gray-50 p-4 md:p-8">
-                        {notification && (
-                            <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 text-white transform transition-all duration-300 ${notification.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}>
-                                {notification.message}
-                            </div>
-                        )}
+                      <div className="grid grid-cols-2 gap-4 max-w-sm">
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Jumlah</label>
+                          <input 
+                            type="number" 
+                            min="0" 
+                            readOnly={isLockedQty}
+                            className={`w-full p-3.5 rounded-xl border font-bold text-blue-600 outline-none transition-all ${isLockedQty ? 'bg-slate-50 border-slate-100 cursor-not-allowed opacity-70' : 'border-slate-200'}`} 
+                            value={formData.quantity} 
+                            onChange={(e) => setFormData(p => ({ ...p, quantity: parseInt(e.target.value) || 0 }))} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Satuan</label>
+                          <select className="w-full p-3.5 rounded-xl border border-slate-200 font-bold outline-none" value={formData.unit} onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))}>
+                            <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                        {activeTab === 'dashboard' && (
-                            <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-gray-800">Ringkasan Gudang</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <StatCard title="Total Item (SKU)" value={inventory.length} color="bg-blue-500" icon={PackagePlus} />
-                                    <StatCard title="Total Stok Fisik" value={inventory.reduce((acc, cur) => acc + cur.stockPhysical, 0)} color="bg-emerald-500" icon={ClipboardList} />
-                                    <StatCard title="Selisih Stok" value={inventory.reduce((acc, cur) => acc + (cur.stockSystem - cur.stockPhysical), 0)} color="bg-orange-500" icon={RefreshCw} />
-                                    <StatCard title="Total Kategori" value={CATEGORIES.length} color="bg-purple-500" icon={Filter} />
-                                </div>
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                                        <h3 className="font-semibold text-gray-700">Data Stok Aktual</h3>
-                                        <button onClick={() => window.open(sheetUrl, '_blank')} className="flex items-center gap-2 text-sm text-green-600 font-medium hover:text-green-700">
-                                            <FileSpreadsheet size={16} /> Google Sheet
-                                        </button>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm">
-                                            <thead>
-                                                <tr className="bg-gray-50 text-gray-600 border-b">
-                                                    <th className="p-4">Kategori</th>
-                                                    <th className="p-4">Nama Barang</th>
-                                                    <th className="p-4">Varian</th>
-                                                    <th className="p-4 text-center">Satuan</th>
-                                                    <th className="p-4 text-right">Stok Sistem</th>
-                                                    <th className="p-4 text-right">Fisik</th>
-                                                    <th className="p-4 text-right">Selisih</th>
-                                                    <th className="p-4">Lokasi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100">
-                                                {inventory.map((item) => (
-                                                    <tr key={item.id} className="hover:bg-gray-50">
-                                                        <td className="p-4 font-medium text-gray-800"><span className="px-2 py-1 bg-gray-100 rounded text-xs border border-gray-200">{item.category.split(' ')[0]}</span></td>
-                                                        <td className="p-4 font-medium">{item.name}</td>
-                                                        <td className="p-4 text-gray-500">{item.variant}</td>
-                                                        <td className="p-4 text-center text-gray-500">{item.uom}</td>
-                                                        <td className="p-4 text-right font-mono">{item.stockSystem}</td>
-                                                        <td className="p-4 text-right font-mono font-bold text-blue-600">{item.stockPhysical}</td>
-                                                        <td className={`p-4 text-right font-mono font-bold ${(item.stockSystem - item.stockPhysical) !== 0 ? 'text-red-500' : 'text-green-500'}`}>{item.stockPhysical - item.stockSystem}</td>
-                                                        <td className="p-4 text-gray-500">{item.location}</td>
-                                                    </tr>
-                                                ))}
-                                                {inventory.length === 0 && <tr><td colSpan="8" className="p-12 text-center text-gray-400">Belum ada data.</td></tr>}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                  {!needsSN && (
+                    <div className="grid grid-cols-2 gap-4 max-w-sm">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Jumlah</label>
+                        <input type="number" min="1" className="w-full p-3.5 rounded-xl border border-slate-200 font-bold text-blue-600 outline-none" value={formData.quantity} onChange={(e) => setFormData(p => ({ ...p, quantity: parseInt(e.target.value) || 0 }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Satuan</label>
+                        <select className="w-full p-3.5 rounded-xl border border-slate-200 font-bold outline-none" value={formData.unit} onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))}>
+                          <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
-                        {(activeTab === 'input' || activeTab === 'output' || activeTab === 'opname') && (
-                            <div className="max-w-2xl mx-auto">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                    {activeTab === 'input' ? 'Input Barang Masuk' : activeTab === 'output' ? 'Input Barang Keluar' : 'Stock Opname'}
-                                </h2>
-                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                                    <form onSubmit={handleSubmit} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-                                            <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg">
-                                                {CATEGORIES.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Barang (Auto-Suggest)</label>
-                                            <input required list="categoryItems" type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Ketik nama barang..." className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                                            <datalist id="categoryItems">
-                                                {suggestions.map((item, idx) => <option key={idx} value={item}/>)}
-                                                {inventory.filter(i => i.category === formData.category).map((i, idx) => <option key={`inv-${idx}`} value={i.name}/>)}
-                                            </datalist>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Varian/Tipe</label>
-                                                <input type="text" name="variant" value={formData.variant} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
-                                                <select name="uom" value={formData.uom} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg">
-                                                    <option>Pcs</option><option>Unit</option><option>Set</option><option>Box</option>
-                                                    <option>Roll</option><option>Meter</option><option>Kg</option><option>Lusin</option><option>Pack</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">{activeTab === 'opname' ? 'Stok Fisik' : 'Jumlah (Qty)'}</label>
-                                                <input required type="number" min="0" name="qty" value={formData.qty} onFocus={(e) => e.target.select()} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg font-bold text-lg" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi Rak</label>
-                                                <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
-                                            <textarea name="notes" rows="2" value={formData.notes} onChange={handleInputChange} className="w-full p-2.5 border border-gray-300 rounded-lg"></textarea>
-                                        </div>
-                                        <button type="submit" disabled={isSyncing} className={`w-full py-3 px-4 rounded-lg font-bold text-white shadow-md transition-transform active:scale-95 flex justify-center items-center gap-2 ${activeTab === 'input' ? 'bg-blue-600' : activeTab === 'output' ? 'bg-red-600' : 'bg-emerald-600'}`}>
-                                            {isSyncing ? <div className="loader"></div> : <Save size={20}/>}
-                                            {isSyncing ? 'Menyimpan...' : 'Simpan Transaksi'}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {activeTab === 'settings' && (
-                            <div className="max-w-2xl mx-auto space-y-6">
-                                <h2 className="text-2xl font-bold text-gray-800">Pengaturan</h2>
-                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                                    <label className="block font-medium text-gray-700 mb-2">Google Apps Script Web App URL</label>
-                                    <div className="flex gap-2">
-                                        <input type="text" value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="flex-1 p-3 border border-gray-300 rounded-lg" />
-                                        <button onClick={handleSaveUrl} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">Simpan</button>
-                                    </div>
-                                    {sheetUrl !== DEFAULT_API_URL && <button onClick={() => { setSheetUrl(DEFAULT_API_URL); localStorage.removeItem('google_sheet_url'); showNotification("Kembali ke Default"); }} className="text-sm text-blue-600 mt-2 hover:underline">Kembalikan ke Default</button>}
-                                </div>
-                            </div>
-                        )}
-                    </main>
+                  <div className="flex justify-between pt-6 border-t">
+                    <button type="button" onClick={() => setActiveTab('logistics')} className="px-6 py-3 border border-slate-200 rounded-xl font-semibold text-sm flex items-center gap-2 hover:bg-slate-50 transition-all">
+                      <ChevronLeft size={18}/> Logistik
+                    </button>
+                    <button type="button" onClick={() => setActiveTab('notes')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center gap-2 shadow-xl hover:bg-black transition-all">
+                      Lanjut ke Ringkasan <ChevronRight size={18}/>
+                    </button>
+                  </div>
                 </div>
-            );
-        }
+              )}
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-    </script>
-</body>
-</html>
+              {/* TAB 3: NOTES */}
+              {activeTab === 'notes' && (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Petugas Penanggung Jawab (PIC)</label>
+                        <input 
+                          type="text" 
+                          placeholder="Nama lengkap pengelola gudang..."
+                          className="w-full p-3.5 rounded-xl border border-slate-200 font-semibold focus:border-blue-500 outline-none transition-all" 
+                          value={formData.pic}
+                          onChange={(e) => setFormData(p => ({ ...p, pic: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div className="p-6 bg-slate-900 rounded-2xl border-l-4 border-blue-500 text-white space-y-4 shadow-xl">
+                        <h4 className="font-bold text-blue-400 text-xs uppercase flex items-center gap-2 tracking-wider leading-none"><Activity size={14}/> Ringkasan Transaksi</h4>
+                        <div className="space-y-2.5 text-[13px] font-medium opacity-90">
+                          <div className="flex justify-between border-b border-white/10 pb-2"><span>No-PG:</span> <span className="font-mono">{formData.pgNumber}</span></div>
+                          <div className="flex justify-between border-b border-white/10 pb-2"><span>Barang:</span> <span className="text-blue-300 font-bold truncate max-w-[200px]">{formData.productName}</span></div>
+                          <div className="flex justify-between border-b border-white/10 pb-2"><span>Dari:</span> <span>{formData.originWarehouse || "-"}</span></div>
+                          <div className="flex justify-between border-b border-white/10 pb-2"><span>Ke:</span> <span>{formData.destinationWarehouse || "-"}</span></div>
+                          <div className="flex justify-between pt-2"><span>Total:</span> <span className="text-blue-400 font-bold">{formData.quantity} {formData.unit}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Catatan Tambahan</label>
+                      <textarea 
+                        rows="8"
+                        className="w-full p-5 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50/20 font-medium text-sm leading-relaxed transition-all"
+                        placeholder="Ketik detail proyek atau kondisi barang..."
+                        value={formData.notes}
+                        onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-8 border-t">
+                    <button type="button" onClick={() => setActiveTab('product')} className="px-6 py-3 border border-slate-200 rounded-xl font-semibold text-sm flex items-center gap-2 hover:bg-slate-50 transition-all">
+                      <ChevronLeft size={18}/> Kembali
+                    </button>
+                    <button type="submit" className="px-12 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3">
+                      <Save size={22} /> SIMPAN & TERBITKAN
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </form>
+          </div>
+        </div>
+        <GlobalFooter />
+      </div>
+
+      {/* Mobile Sticky Action */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-lg border-t border-slate-200 flex gap-3 z-50">
+        <button onClick={() => setIsLanding(true)} className="p-3.5 bg-slate-100 text-slate-500 rounded-xl"><RotateCcw size={20}/></button>
+        <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2">
+          <Save size={20}/> Terbitkan PG
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default App;
