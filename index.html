@@ -2,55 +2,151 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MV-LOGISTIK - Solusi Inventaris Terpadu</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MVI-PDN - Inventory Management</title>
+    <link rel="icon" type="image/webp" href="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM CDN -->
+    
+    <!-- Configure Tailwind -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof tailwind === 'undefined' && window.tailwind) {
+                window.tailwind.config = getTailwindConfig();
+            } else if (typeof tailwind !== 'undefined') {
+                tailwind.config = getTailwindConfig();
+            }
+        });
+
+        function getTailwindConfig() {
+            return {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        },
+                        colors: {
+                            brand: {
+                                50: '#f0f9ff',
+                                100: '#e0f2fe',
+                                500: '#0ea5e9',
+                                600: '#0284c7',
+                                900: '#0c4a6e',
+                            }
+                        },
+                        animation: {
+                            'fade-in': 'fadeIn 0.5s ease-out',
+                            'slide-up': 'slideUp 0.4s ease-out',
+                            'scale-in': 'scaleIn 0.3s ease-out',
+                        },
+                        keyframes: {
+                            fadeIn: {
+                                '0%': { opacity: '0' },
+                                '100%': { opacity: '1' },
+                            },
+                            slideUp: {
+                                '0%': { transform: 'translateY(10px)', opacity: '0' },
+                                '100%': { transform: 'translateY(0)', opacity: '1' },
+                            },
+                            scaleIn: {
+                                '0%': { transform: 'scale(0.95)', opacity: '0' },
+                                '100%': { transform: 'scale(1)', opacity: '1' },
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = getTailwindConfig();
+        }
+    </script>
+    
+    <!-- React Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX parsing -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.05) 0px, transparent 50%), 
+                radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .input-focus-ring {
+            transition: all 0.2s ease;
+        }
+        .input-focus-ring:focus {
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+            border-color: #0ea5e9;
+        }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Animasi transisi halus */
-        .fade-enter { opacity: 0; transform: translateY(10px); }
-        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 300s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // --- KOMPONEN LOGO GAMBAR ---
+        // --- COMPONENTS ---
+
         const ProLogo = () => (
-            <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center overflow-hidden">
-                    <img 
-                        src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true" 
-                        alt="Microvision Logo" 
-                        className="h-10 md:h-12 w-auto object-contain"
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/150x50?text=MICROVISION';
-                        }}
-                    />
-                </div>
-                <div className="flex flex-col text-left border-l border-slate-200 pl-3">
-                    <span className="text-sm font-bold tracking-widest text-slate-800 uppercase">LOGISTIK</span>
-                    <span className="text-[9px] font-semibold tracking-[0.1em] uppercase text-blue-600 leading-tight">Solusi Inventaris Terpadu</span>
+            <div className="flex items-center gap-4 select-none">
+                <img 
+                    src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true&v=1" 
+                    alt="Logo MVI" 
+                    className="h-9 md:h-11 w-auto object-contain"
+                    onError={(e) => {
+                        e.target.style.display = 'none'; 
+                        document.getElementById('logo-text-fallback').style.display = 'block';
+                    }}
+                />
+                <div id="logo-text-fallback" className="hidden text-xl font-black text-slate-900 tracking-tighter">MVI</div>
+                
+                <div className="flex flex-col text-left border-l-2 border-slate-300 pl-3">
+                    <span className="text-sm font-extrabold tracking-tight text-slate-900 leading-none">MVI-PDN</span>
+                    <span className="text-[10px] font-semibold tracking-wide uppercase text-slate-500 leading-tight">Inventory Management</span>
                 </div>
             </div>
         );
 
-        // --- KOMPONEN FOOTER ---
+        const SectionHeader = ({ title, description, iconName, themeColor }) => (
+            <div className={`flex items-start gap-4 mb-6 pb-6 border-b border-slate-100 animate-slide-up`}>
+                <div className={`p-3 rounded-xl shadow-sm ${themeColor === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-700'}`}>
+                    <i data-lucide={iconName} className="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+                    <p className="text-sm text-slate-500 mt-1">{description}</p>
+                </div>
+            </div>
+        );
+
         const GlobalFooter = () => (
             <footer className="mt-12 mb-8 text-center opacity-80">
                 <div className="inline-flex flex-col items-center gap-2">
@@ -58,20 +154,20 @@
                         Manajemen Inventaris Microvision
                     </p>
                     <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest bg-white border border-slate-100 px-3 py-1 rounded-full shadow-sm">
-                        Versi 1.7.5
+                        Versi 1.8.3 (Stable)
                     </span>
                 </div>
             </footer>
         );
 
-        // --- DATA TAKSONOMI ---
+        // --- DATA PRODUK ---
         const PRODUCT_TAXONOMY = {
-            'MVIFCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '2.50', '4.00'] } },
-            'MVIDCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '1.50', '2.00', '2.50'] } },
-            'MVIFCO': { type: 'UNIT', isBatch: true, models: { 'Standard': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
-            'KIOSK': { type: 'UNIT', needsSN: true, models: { 'Standard': [], 'SLIM': [] } },
-            'IFP': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['65"', '75"', '86"'], 'NEWLINE': ['65"', '75"', '86"'], 'PHILIPS': ['65"', '75"', '86"'] } },
-            'VDW': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['4935', '5535', '5517', '5588'], 'PHILIPS': ['49BDL2105X-ik', '55BDL2105X-ik'] } },
+            'MVIFCI': { type: 'UNIT', isBatch: true, needsSN: true, isLockedQty: false, models: { 'Standard': ['1.86', '2.50', '4.00'] } },
+            'MVIDCI': { type: 'UNIT', isBatch: true, needsSN: true, isLockedQty: false, models: { 'Standard': ['1.86', '1.50', '2.00', '2.50'] } },
+            'MVIFCO': { type: 'UNIT', isBatch: true, needsSN: true, isLockedQty: false, models: { 'Standard': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
+            'KIOSK': { type: 'UNIT', needsSN: true, isLockedQty: true, models: { 'Standard': [], 'SLIM': [] } },
+            'IFP': { type: 'UNIT', needsSN: true, isLockedQty: true, models: { 'MICROVISION': ['65"', '75"', '86"'], 'NEWLINE': ['65"', '75"', '86"'], 'PHILIPS': ['65"', '75"', '86"'] } },
+            'VDW': { type: 'UNIT', needsSN: true, isLockedQty: true, models: { 'MICROVISION': ['4935', '5535', '5517', '5588'], 'PHILIPS': ['49BDL2105X-ik', '55BDL2105X-ik'] } },
             'Module': { type: 'PART', isBatch: true, models: { 'MVIMDI3218': ['1.86', '1.50', '2.00', '2.50'], 'MVIMDI1616': ['2.50'], 'MVIMDI3216': ['1.86', '2.50', '4.00'], 'MVIDI3216': ['2.50'], 'MVIMDO3216': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
             'Receiving Card': { type: 'PART', models: { 'MRV416': [], 'MRV432': [], 'MRV532': [] } },
             'Power Supply': { type: 'PART', models: { 'FPSU40A': [], 'PSU40A': [], 'PSU60A': [] } },
@@ -84,6 +180,7 @@
             const [isLanding, setIsLanding] = useState(true);
             const [activeTab, setActiveTab] = useState('logistics');
             const [showSuccess, setShowSuccess] = useState(false);
+            const [showConfirm, setShowConfirm] = useState(false);
             const [pgType, setPgType] = useState('UNIT'); 
             const [errors, setErrors] = useState({});
             
@@ -99,21 +196,30 @@
                 productName: '',
                 quantity: 1,
                 unit: 'Unit',
-                pic: '',
+                senderPic: '',
+                receiverPic: '',
                 notes: '',
                 rawSN: '' 
             });
 
-            useEffect(() => { lucide.createIcons(); });
+            useEffect(() => { 
+                if (window.lucide) window.lucide.createIcons(); 
+            });
+
+            // Re-init icon untuk popup
+            useEffect(() => {
+                if (showConfirm && window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 100);
+                }
+            }, [showConfirm]);
 
             const handleStart = (type) => {
                 setPgType(type);
                 setIsLanding(false);
                 setActiveTab('logistics');
-                const year = new Date().getFullYear();
                 setFormData(prev => ({ 
                     ...prev, 
-                    pgNumber: `PG/${type}/${year}/`,
+                    pgNumber: '',
                     category: '', model: '', batch: '', subVarian: '', productName: '', rawSN: '', quantity: 1
                 }));
             };
@@ -143,227 +249,473 @@
                 setFormData(prev => ({
                     ...prev,
                     rawSN: val,
-                    quantity: taxonomy?.needsSN ? (lines.length || 0) : prev.quantity
+                    quantity: taxonomy?.isLockedQty ? (lines.length || 0) : prev.quantity
                 }));
             };
 
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!formData.pgNumber || !formData.origin || !formData.destination || !formData.category) {
-                    setErrors({ pg: !formData.pgNumber, org: !formData.origin, dest: !formData.destination, cat: !formData.category });
+            // --- PERBAIKAN LOGIKA EKSTRAKSI SN ---
+            const generateDetailItems = () => {
+                if (!formData.category) return [];
+                
+                const taxonomy = PRODUCT_TAXONOMY[formData.category];
+                const items = [];
+                const snLines = formData.rawSN.split('\n').filter(line => line.trim() !== '');
+
+                // LOGIKA MODE BATCH (Contoh: MVIFCI)
+                // Menggunakan properti .isBatch (sesuai definisi data)
+                if (taxonomy?.isBatch) {
+                    // Siapkan nama dasar: KATEGORI + SPEC - BATCH
+                    const cleanSpec = formData.subVarian ? (formData.subVarian.startsWith('P') ? formData.subVarian.substring(1) : formData.subVarian) : '';
+                    const batchVal = formData.model || 'BATCH';
+                    const prefixName = `${formData.category}${cleanSpec}-${batchVal}`;
+
+                    snLines.forEach(line => {
+                        const trimmed = line.trim();
+                        // Cek rentang dengan pemisah '-'
+                        if (trimmed.includes('-') && trimmed.split('-').length === 2) {
+                            const parts = trimmed.split('-');
+                            const startStr = parts[0].trim();
+                            const endStr = parts[1].trim();
+                            const start = parseInt(startStr);
+                            const end = parseInt(endStr);
+                            
+                            if (!isNaN(start) && !isNaN(end) && end >= start) {
+                                // Gunakan panjang digit input atau minimal 4 digit
+                                const padding = Math.max(startStr.length, 4);
+                                for (let i = start; i <= end; i++) {
+                                    const sn = i.toString().padStart(padding, '0');
+                                    items.push({ name: `${prefixName}-${sn}`, qty: 1 });
+                                }
+                            } else {
+                                items.push({ name: `${prefixName}-${trimmed}`, qty: 1 });
+                            }
+                        } else {
+                            items.push({ name: `${prefixName}-${trimmed}`, qty: 1 });
+                        }
+                    });
+                } 
+                // LOGIKA MODE UNIT (KIOSK, IFP, dll)
+                else if (taxonomy?.needsSN) {
+                    snLines.forEach(sn => {
+                        items.push({ name: `${formData.productName} - SN: ${sn}`, qty: 1 });
+                    });
+                }
+                // LOGIKA PART NON-SN
+                else {
+                    items.push({ name: formData.productName, qty: formData.quantity });
+                }
+
+                return items;
+            };
+
+            const detailItems = useMemo(() => generateDetailItems(), [formData, showConfirm]);
+
+            const handleModelChange = (val) => {
+                const taxonomy = PRODUCT_TAXONOMY[formData.category];
+                // Menggunakan properti .isBatch yang benar
+                const isBatchUnit = taxonomy?.isBatch;
+                // isModulePartMode logikanya sama dengan isBatch untuk Module
+                // Kita sederhanakan penamaan state
+                
+                setFormData(prev => {
+                    let newName = "";
+                    if (isBatchUnit) {
+                        newName = `${prev.category}-${val}`;
+                    } else {
+                        newName = `${prev.category} ${val}`;
+                    }
+                    return { ...prev, model: val, productName: newName };
+                });
+            };
+
+            const handleSpecChange = (val) => {
+                setFormData(prev => {
+                    const taxonomy = PRODUCT_TAXONOMY[prev.category];
+                    const isBatchUnit = taxonomy?.isBatch;
+                    const cleanSpec = val.startsWith('P') ? val.substring(1) : val;
+
+                    let newName = "";
+                    if (isBatchUnit) {
+                        newName = `${prev.category}-${prev.model}-${cleanSpec}`;
+                    } else {
+                        newName = `${prev.category} ${prev.model} ${val}`;
+                    }
+                    return { ...prev, specification: val, subVarian: val, productName: newName };
+                });
+            };
+
+            const handleReview = () => {
+                const newErrors = {};
+                if (!formData.pgNumber) newErrors.pgNumber = true;
+                if (!formData.origin) newErrors.origin = true;
+                if (!formData.destination) newErrors.destination = true;
+                if (!formData.category) newErrors.cat = true;
+                if (!formData.senderPic) newErrors.senderPic = true;
+                if (!formData.receiverPic) newErrors.receiverPic = true;
+
+                if (Object.keys(newErrors).length > 0) {
+                    setErrors(newErrors);
+                    if (newErrors.senderPic || newErrors.receiverPic) setActiveTab('notes');
+                    else if (newErrors.pgNumber || newErrors.origin || newErrors.destination) setActiveTab('logistics');
+                    else setActiveTab('product');
                     return;
                 }
+                setShowConfirm(true);
+            };
+
+            const handleSubmit = () => {
+                setShowConfirm(false);
                 setShowSuccess(true);
                 setTimeout(() => { setShowSuccess(false); setIsLanding(true); }, 3000);
             };
 
             const currentTax = PRODUCT_TAXONOMY[formData.category];
             const isBatchMode = currentTax?.isBatch || false;
-            const isSNMode = currentTax?.needsSN || false;
+            const needsSN = currentTax?.needsSN || false;
+            const isLockedQty = currentTax?.isLockedQty || false;
 
+            const themeColor = pgType === 'UNIT' ? 'blue' : 'slate';
+            const themeBg = pgType === 'UNIT' ? 'bg-blue-600' : 'bg-slate-800';
+            const themeBgHover = pgType === 'UNIT' ? 'hover:bg-blue-700' : 'hover:bg-slate-900';
+            const themeText = pgType === 'UNIT' ? 'text-blue-600' : 'text-slate-700';
+            const themeBorder = pgType === 'UNIT' ? 'border-blue-600' : 'border-slate-800';
+            const themeLightBg = pgType === 'UNIT' ? 'bg-blue-50' : 'bg-slate-100';
+
+            // --- RENDER ---
             if (isLanding) return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 flex-col">
-                    <div className="max-w-4xl w-full text-center">
-                        <div className="flex justify-center mb-10 scale-125 md:scale-150">
-                            <img 
-                                src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true" 
-                                alt="Microvision" 
-                                className="h-16 md:h-20 w-auto"
-                            />
+                <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+                        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-100 blur-[100px] opacity-60"></div>
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-100 blur-[100px] opacity-60"></div>
+                    </div>
+
+                    <div className="max-w-5xl w-full animate-fade-in">
+                        <div className="text-center mb-12">
+                            <div className="flex justify-center mb-8 transform hover:scale-105 transition-transform duration-500">
+                                <img 
+                                    src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true" 
+                                    alt="Microvision" 
+                                    className="h-16 md:h-24 w-auto drop-shadow-sm object-contain"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.parentNode.innerHTML = '<div class="text-4xl font-black text-slate-800 tracking-tighter">MVI-PDN</div>';
+                                    }}
+                                />
+                            </div>
+                            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+                                Manajemen Logistik
+                            </h1>
+                            <p className="text-slate-500 text-lg md:text-xl font-medium max-w-2xl mx-auto uppercase tracking-widest text-sm">
+                                Inventory Management System
+                            </p>
                         </div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 mt-4">Logistik & Mutasi Gudang</h1>
-                        <p className="text-slate-500 mb-12 text-sm md:text-base">Silakan pilih jenis dokumen untuk memulai pencatatan mutasi barang</p>
-                        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                            <button onClick={() => handleStart('UNIT')} className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl transition-all text-left group">
-                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                    <i data-lucide="box"></i>
+
+                        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+                            <button onClick={() => handleStart('UNIT')} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-brand-500/10 border-2 border-slate-100 hover:border-blue-500 transition-all duration-300 text-left overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                                    <i data-lucide="box" className="w-32 h-32 text-blue-600"></i>
                                 </div>
-                                <h2 className="text-lg font-bold text-slate-800">PG-UNIT</h2>
-                                <p className="text-xs text-slate-400 mt-1">Mutasi Unit Rakitan & Monitor</p>
-                            </button>
-                            <button onClick={() => handleStart('PART')} className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-slate-800 hover:shadow-xl transition-all text-left group">
-                                <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-slate-800 group-hover:text-white transition-all">
-                                    <i data-lucide="cpu"></i>
+                                <div className="relative z-10">
+                                    <span className="inline-flex items-center justify-center w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                                        <i data-lucide="box" className="w-7 h-7"></i>
+                                    </span>
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">PG-UNIT</h2>
+                                    <p className="text-slate-500 font-medium mb-6">Mutasi untuk unit rakitan jadi seperti Kiosk, Videotron, dan Monitor Interaktif.</p>
+                                    <div className="flex items-center text-sm font-bold text-blue-600">
+                                        Mulai Input <i data-lucide="arrow-right" className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                                    </div>
                                 </div>
-                                <h2 className="text-lg font-bold text-slate-800">PG-PART</h2>
-                                <p className="text-xs text-slate-400 mt-1">Mutasi Suku Cadang & Komponen</p>
                             </button>
+
+                            <button onClick={() => handleStart('PART')} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-500/10 border-2 border-slate-100 hover:border-slate-700 transition-all duration-300 text-left overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                                    <i data-lucide="cpu" className="w-32 h-32 text-slate-800"></i>
+                                </div>
+                                <div className="relative z-10">
+                                    <span className="inline-flex items-center justify-center w-14 h-14 bg-slate-100 text-slate-700 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                                        <i data-lucide="cpu" className="w-7 h-7"></i>
+                                    </span>
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors">PG-PART</h2>
+                                    <p className="text-slate-500 font-medium mb-6">Mutasi untuk suku cadang, modul LED, kabel, power supply, dan komponen.</p>
+                                    <div className="flex items-center text-sm font-bold text-slate-700">
+                                        Mulai Input <i data-lucide="arrow-right" className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                        <div className="mt-16 text-center">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Enterprise Resource Planning • V1.7.5</p>
                         </div>
                     </div>
-                    <GlobalFooter />
                 </div>
             );
 
             return (
-                <div className="min-h-screen bg-slate-50 flex flex-col text-left">
-                    <nav className="sticky top-0 z-50 bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
-                        <div className="cursor-pointer" onClick={() => setIsLanding(true)}><ProLogo /></div>
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                                <button onClick={() => handleStart('UNIT')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'UNIT' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}`}>UNIT</button>
-                                <button onClick={() => handleStart('PART')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'PART' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400'}`}>PART</button>
+                <div className="min-h-screen flex flex-col pb-24 md:pb-10">
+                    <nav className={`sticky top-0 z-50 glass-nav px-4 md:px-8 py-3 flex items-center justify-between transition-all duration-300 border-t-4 ${themeBorder}`}>
+                        <div className="cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsLanding(true)}><ProLogo /></div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex bg-slate-100/80 p-1 rounded-xl border border-slate-200">
+                                <button onClick={() => handleStart('UNIT')} className={`px-3 md:px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${pgType === 'UNIT' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>UNIT</button>
+                                <button onClick={() => handleStart('PART')} className={`px-3 md:px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${pgType === 'PART' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>PART</button>
                             </div>
-                            <button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-blue-200 shadow-lg hover:bg-blue-700 transition-colors"><i data-lucide="save" className="w-4 h-4"></i> Terbitkan</button>
+                            <button onClick={handleReview} className={`hidden md:flex ${themeBg} text-white px-6 py-2.5 rounded-xl font-bold text-sm items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-900/20 ${themeBgHover}`}>
+                                <i data-lucide="check-square" className="w-4 h-4"></i>
+                                <span>Review & Konfirmasi</span>
+                            </button>
                         </div>
                     </nav>
 
-                    <div className="max-w-5xl mx-auto w-full px-4 pt-8 flex-grow">
+                    <div className="max-w-5xl mx-auto w-full px-4 pt-8 flex-grow animate-fade-in">
+                        <div className="mb-6 flex items-center gap-3">
+                            <span className={`h-8 w-1.5 rounded-full ${themeBg}`}></span>
+                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Formulir PG {pgType === 'UNIT' ? 'Unit' : 'Part'}</h1>
+                        </div>
+
                         {showSuccess && (
-                            <div className="mb-6 p-4 bg-emerald-500 text-white rounded-xl flex items-center gap-3 animate-pulse shadow-lg">
-                                <i data-lucide="check-circle-2"></i> <span className="font-bold">Transaksi Berhasil Disimpan!</span>
+                            <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-scale-in">
+                                <span className="bg-white/20 p-1 rounded-full"><i data-lucide="check" className="w-4 h-4"></i></span>
+                                <span className="font-bold text-sm">Dokumen Berhasil Diterbitkan!</span>
                             </div>
                         )}
 
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
-                            <div className="flex border-b bg-slate-50/30 overflow-x-auto scrollbar-hide">
-                                <button onClick={() => setActiveTab('logistics')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'logistics' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="truck" className="w-4 h-4"></i> Logistik</button>
-                                <button onClick={() => setActiveTab('product')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'product' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="package" className="w-4 h-4"></i> Detail</button>
-                                <button onClick={() => setActiveTab('notes')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'notes' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="clipboard-list" className="w-4 h-4"></i> Catatan</button>
+                        <div className="glass-panel rounded-3xl border border-white/50 shadow-xl overflow-hidden mb-8">
+                            <div className="flex border-b border-slate-100 overflow-x-auto scrollbar-hide">
+                                {['logistics', 'product', 'notes'].map((tab) => (
+                                    <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[100px] px-6 py-5 text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 relative ${activeTab === tab ? `${themeText} ${themeLightBg}` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
+                                        <i data-lucide={tab === 'logistics' ? 'truck' : tab === 'product' ? 'package' : 'clipboard-list'} className="w-4 h-4"></i>
+                                        <span className="capitalize">{tab === 'logistics' ? 'Logistik' : tab === 'product' ? 'Rincian' : 'Catatan'}</span>
+                                        {activeTab === tab && <span className={`absolute bottom-0 left-0 w-full h-0.5 rounded-t-full ${pgType === 'UNIT' ? 'bg-blue-600' : 'bg-slate-800'}`}></span>}
+                                    </button>
+                                ))}
                             </div>
 
-                            <div className="p-6 md:p-8">
+                            <div className="p-6 md:p-10 min-h-[400px]">
                                 {activeTab === 'logistics' && (
-                                    <div className="space-y-8 animate-in fade-in duration-300">
-                                        <div className="grid sm:grid-cols-2 gap-6">
+                                    <div className="animate-slide-up">
+                                        <SectionHeader title="Informasi Logistik" description="Lengkapi data surat jalan dan tujuan pengiriman." iconName="truck" themeColor={themeColor} />
+                                        <div className="grid md:grid-cols-2 gap-8 mb-8">
                                             <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase">No-PG</label>
-                                                <input type="text" value={formData.pgNumber} onChange={(e) => setFormData({...formData, pgNumber: e.target.value})} className={`w-full p-3.5 border rounded-xl font-mono font-bold text-blue-600 outline-none transition-all ${errors.pg ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Masukkan No-PG..." />
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">No-PG</label>
+                                                <div className="relative group">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors"><i data-lucide="file-text" className="w-5 h-5"></i></div>
+                                                    <input type="text" value={formData.pgNumber} onChange={(e) => setFormData({...formData, pgNumber: e.target.value})} className={`w-full pl-12 pr-4 py-4 bg-white border ${errors.pg ? 'border-red-300 bg-red-50' : 'border-slate-200'} rounded-2xl font-mono text-slate-700 font-bold outline-none input-focus-ring placeholder:text-slate-300`} placeholder="Masukkan No-PG..." />
+                                                </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Tanggal</label>
-                                                <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-semibold outline-none focus:border-blue-500" />
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal</label>
+                                                <div className="relative group">
+                                                    <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-700 outline-none input-focus-ring cursor-pointer" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 grid sm:grid-cols-2 gap-8 relative">
-                                            <div className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-300 z-10">
-                                                <i data-lucide="arrow-right-left" className="w-4 h-4"></i>
+                                        <div className="bg-slate-50 p-6 md:p-8 rounded-[2rem] border border-slate-200 grid md:grid-cols-2 gap-8 relative overflow-hidden">
+                                            <div className="space-y-2 relative z-10">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider"><span className="w-2 h-2 rounded-full bg-red-500"></span> Asal</label>
+                                                <input type="text" value={formData.origin} onChange={(e) => setFormData({...formData, origin: e.target.value})} className={`w-full px-5 py-4 bg-white border ${errors.org ? 'border-red-300' : 'border-slate-200'} rounded-2xl outline-none input-focus-ring font-medium`} placeholder="Asal pengiriman..." />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i data-lucide="map-pin" className="w-4 h-4 text-red-500"></i> Gudang Asal</label>
-                                                <input type="text" value={formData.origin} onChange={(e) => setFormData({...formData, origin: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all bg-white ${errors.org ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Nama gudang asal..." />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i data-lucide="map-pin" className="w-4 h-4 text-emerald-500"></i> Gudang Tujuan</label>
-                                                <input type="text" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all bg-white ${errors.dest ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Nama gudang tujuan..." />
+                                            <div className="space-y-2 relative z-10">
+                                                <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Tujuan</label>
+                                                <input type="text" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} className={`w-full px-5 py-4 bg-white border ${errors.dest ? 'border-red-300' : 'border-slate-200'} rounded-2xl outline-none input-focus-ring font-medium`} placeholder="Tujuan pengiriman..." />
                                             </div>
                                         </div>
-                                        <div className="flex justify-end"><button type="button" onClick={() => setActiveTab('product')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all shadow-lg">Lanjut <i data-lucide="chevron-right" className="w-4 h-4"></i></button></div>
+                                        <div className="flex justify-end pt-6"><button onClick={() => setActiveTab('product')} className={`group ${themeBg} text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 ${themeBgHover} transition-all hover:pr-6`}>Lanjut ke Barang <i data-lucide="arrow-right" className="w-4 h-4 group-hover:translate-x-1 transition-transform"></i></button></div>
                                     </div>
                                 )}
 
                                 {activeTab === 'product' && (
-                                    <div className="space-y-8 animate-in fade-in duration-300">
-                                        <div className={`grid grid-cols-1 ${isBatchMode ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
+                                    <div className="animate-slide-up">
+                                        <SectionHeader title="Rincian Barang" description="Spesifikasi unit atau komponen yang dimutasi." iconName="package" themeColor={themeColor} />
+                                        <div className={`grid grid-cols-1 ${isBatchMode ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-5 mb-8`}>
                                             <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Kategori</label>
-                                                <select value={formData.category} onChange={(e) => handleCategoryChange(e.target.value)} className={`w-full p-3.5 border rounded-xl outline-none bg-white font-medium ${errors.cat ? 'border-red-400' : 'border-slate-200 focus:border-blue-500'}`}>
-                                                    <option value="">-- Pilih --</option>
-                                                    {Object.keys(PRODUCT_TAXONOMY).filter(c => PRODUCT_TAXONOMY[c].type === pgType).map(c => <option key={c} value={c}>{c}</option>)}
-                                                </select>
+                                                <label className="text-xs font-bold text-slate-500 uppercase">Kategori</label>
+                                                <div className="relative">
+                                                    <select value={formData.category} onChange={(e) => handleCategoryChange(e.target.value)} className={`w-full px-4 py-3.5 bg-white border rounded-xl appearance-none outline-none input-focus-ring font-medium text-slate-700 ${errors.cat ? 'border-red-300' : 'border-slate-200'}`}>
+                                                        <option value="">Pilih Kategori</option>
+                                                        {Object.keys(PRODUCT_TAXONOMY).filter(c => PRODUCT_TAXONOMY[c].type === pgType).map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
+                                                </div>
                                             </div>
+
                                             {isBatchMode ? (
                                                 <>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Batch</label>
-                                                        <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium" placeholder="Ketik batch..." />
+                                                    <div className="space-y-2 animate-scale-in">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Batch</label>
+                                                        <input type="text" value={formData.model} onChange={(e) => handleModelChange(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl outline-none input-focus-ring font-medium" placeholder="Kode Batch..." />
                                                     </div>
-                                                    <div className="md:col-span-2 space-y-2">
-                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Pitch / Sub Varian</label>
-                                                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
-                                                            <option value="">-- Pilih --</option>
-                                                            {PRODUCT_TAXONOMY[formData.category]?.models['Standard'] ? 
-                                                                PRODUCT_TAXONOMY[formData.category].models['Standard'].map(s => <option key={s} value={s}>{s}</option>) :
-                                                                formData.model && PRODUCT_TAXONOMY[formData.category]?.models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)
-                                                            }
-                                                        </select>
+                                                    <div className="md:col-span-2 space-y-2 animate-scale-in">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Pitch / Sub Varian</label>
+                                                        <div className="relative">
+                                                            <select value={formData.subVarian} onChange={(e) => handleSpecChange(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl appearance-none outline-none input-focus-ring font-medium text-slate-700">
+                                                                <option value="">Pilih Spesifikasi</option>
+                                                                {PRODUCT_TAXONOMY[formData.category]?.models['Standard'] ? 
+                                                                    PRODUCT_TAXONOMY[formData.category].models['Standard'].map(s => <option key={s} value={s}>{s}</option>) :
+                                                                    formData.model && PRODUCT_TAXONOMY[formData.category]?.models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)
+                                                                }
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
+                                                        </div>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <>
                                                     <div className="space-y-2">
-                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Varian / Model</label>
-                                                        <select value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
-                                                            <option value="">-- Pilih --</option>
-                                                            {formData.category && Object.keys(PRODUCT_TAXONOMY[formData.category].models).map(m => <option key={m} value={m}>{m}</option>)}
-                                                        </select>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Model</label>
+                                                        <div className="relative">
+                                                            <select value={formData.model} onChange={(e) => handleModelChange(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl appearance-none outline-none input-focus-ring font-medium text-slate-700">
+                                                                <option value="">Pilih Model</option>
+                                                                {formData.category && Object.keys(PRODUCT_TAXONOMY[formData.category].models).map(m => <option key={m} value={m}>{m}</option>)}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Sub Varian</label>
-                                                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
-                                                            <option value="">-- Pilih --</option>
-                                                            {formData.category && formData.model && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)}
-                                                        </select>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Sub Varian</label>
+                                                        <div className="relative">
+                                                            <select value={formData.subVarian} onChange={(e) => handleSpecChange(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl appearance-none outline-none input-focus-ring font-medium text-slate-700">
+                                                                <option value="">Pilih Sub Varian</option>
+                                                                {formData.category && formData.model && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
+                                                        </div>
                                                     </div>
                                                 </>
                                             )}
                                         </div>
 
-                                        <div className="p-6 bg-slate-900 rounded-2xl space-y-5 shadow-inner">
-                                            <div>
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block opacity-70">Identifikasi Barang</label>
-                                                <div className="text-white font-bold text-xl flex items-center gap-3 uppercase">{formData.productName || "MENUNGGU PILIHAN..."}</div>
-                                            </div>
-                                            {pgType === 'UNIT' && formData.category && (
-                                                <div className="pt-5 border-t border-white/10 animate-in slide-in-from-top-2 duration-500">
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-widest"><i data-lucide="hash" className="w-4 h-4"></i> Masukkan Serial Number (SN)</div>
-                                                        {isSNMode && <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-black uppercase shadow-lg">Mode Per Unit</span>}
+                                        <div className={`rounded-[1.5rem] p-6 text-white shadow-xl shadow-slate-200 mb-8 transition-all duration-300 ${pgType === 'UNIT' ? 'bg-slate-900' : 'bg-slate-700'}`}>
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Barang Teridentifikasi</label>
+                                                    <div className="text-xl md:text-2xl font-bold tracking-tight text-white/90">
+                                                        {formData.productName || <span className="opacity-30 italic">Menunggu input...</span>}
                                                     </div>
-                                                    <textarea value={formData.rawSN} onChange={(e) => handleSNChange(e.target.value)} rows={5} placeholder={isSNMode ? "Tekan ENTER untuk baris SN berikutnya..." : "Ketik rentang SN (Contoh: 01-10)..."} className="w-full p-4 bg-slate-800 border-none rounded-xl text-white font-mono text-sm focus:ring-2 focus:ring-blue-500/50 outline-none resize-none shadow-inner" />
+                                                </div>
+                                                {needsSN && (
+                                                    <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/10 text-xs font-bold tracking-wide">MODE NOMOR SERI</div>
+                                                )}
+                                            </div>
+                                            {needsSN && formData.category && (
+                                                <div className="mt-6 pt-6 border-t border-white/10 animate-fade-in">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center gap-2 text-brand-300 text-xs font-bold uppercase tracking-wider"><i data-lucide="scan-line" className="w-4 h-4"></i> Input SN</div>
+                                                        <span className="text-[10px] text-slate-400">{isLockedQty ? "Tekan Enter untuk baris baru" : "Ketik rentang SN (Cth: 001-050)"}</span>
+                                                    </div>
+                                                    <textarea value={formData.rawSN} onChange={(e) => handleSNChange(e.target.value)} rows={5} placeholder={isLockedQty ? "Masukkan Nomor Seri..." : "Masukkan rentang nomor seri..."} className="w-full p-4 bg-slate-800/50 border border-white/10 rounded-xl text-white font-mono text-sm focus:bg-slate-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none resize-none placeholder:text-slate-600 transition-all" />
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 max-w-sm">
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Jumlah</label>
-                                                <input type="number" readOnly={isSNMode} value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} className={`w-full p-3.5 border rounded-xl font-bold text-blue-600 outline-none transition-all ${isSNMode ? 'bg-slate-50 cursor-not-allowed opacity-60 border-slate-100' : 'border-slate-200 focus:border-blue-500'}`} />
+                                        <div className="flex flex-col md:flex-row justify-between items-end gap-6 pt-2">
+                                            <div className="grid grid-cols-2 gap-4 w-full md:w-auto md:min-w-[300px]">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Jumlah</label>
+                                                    <input type="number" readOnly={isLockedQty} value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} className={`w-full px-4 py-3.5 border rounded-xl font-bold ${themeText} outline-none transition-all ${isLockedQty ? 'bg-slate-50 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-white border-slate-200 input-focus-ring'}`} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Satuan</label>
+                                                    <div className="relative">
+                                                        <select value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl font-bold outline-none input-focus-ring appearance-none">
+                                                            <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
+                                                        </select>
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Satuan</label>
-                                                <select value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-bold outline-none focus:border-blue-500 bg-white">
-                                                    <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
-                                                </select>
+                                            <div className="flex gap-3 w-full md:w-auto">
+                                                <button onClick={() => setActiveTab('logistics')} className="flex-1 md:flex-none px-6 py-3.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Kembali</button>
+                                                <button onClick={() => setActiveTab('notes')} className={`flex-1 md:flex-none px-8 py-3.5 ${themeBg} text-white rounded-xl font-bold flex items-center justify-center gap-3 ${themeBgHover} transition-all shadow-lg shadow-slate-200`}>Catatan <i data-lucide="chevron-right" className="w-4 h-4"></i></button>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between border-t border-slate-100 pt-6"><button type="button" onClick={() => setActiveTab('logistics')} className="px-6 py-3 border border-slate-200 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-600">Kembali</button><button type="button" onClick={() => setActiveTab('notes')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-black transition-all">Lanjut <i data-lucide="chevron-right" className="w-4 h-4"></i></button></div>
                                     </div>
                                 )}
 
                                 {activeTab === 'notes' && (
-                                    <div className="space-y-8 animate-in fade-in duration-300">
+                                    <div className="animate-slide-up">
+                                        <SectionHeader title="Catatan & Finalisasi" description="Tambahkan detail tambahan dan konfirmasi mutasi." iconName="clipboard-list" themeColor={themeColor} />
                                         <div className="grid md:grid-cols-2 gap-8">
                                             <div className="space-y-6">
-                                                <div className="space-y-2">
-                                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Petugas Penanggung Jawab (PIC)</label>
-                                                    <input type="text" value={formData.pic} onChange={(e) => setFormData({...formData, pic: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-semibold outline-none focus:border-blue-500 transition-all" placeholder="Nama lengkap..." />
-                                                </div>
-                                                <div className="p-6 bg-slate-900 rounded-2xl border-l-4 border-blue-500 text-white space-y-4 shadow-xl">
-                                                    <h4 className="text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"><i data-lucide="activity" className="w-3 h-3"></i> Ringkasan Transaksi</h4>
-                                                    <div className="space-y-3 text-[13px] opacity-90 font-medium">
-                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>No-PG:</span> <span className="font-mono font-bold">{formData.pgNumber}</span></div>
-                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>Asal:</span> <span>{formData.origin || "-"}</span></div>
-                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>Tujuan:</span> <span>{formData.destination || "-"}</span></div>
-                                                        <div className="flex justify-between pt-1"><span>Total Unit:</span> <span className="text-blue-400 font-bold text-lg">{formData.quantity} {formData.unit}</span></div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PIC Pengirim <span className="text-red-500">*</span></label>
+                                                        <input type="text" value={formData.senderPic} onChange={(e) => setFormData({...formData, senderPic: e.target.value})} className={`w-full px-4 py-3.5 bg-white border ${errors.senderPic ? 'border-red-300' : 'border-slate-200'} rounded-xl font-medium outline-none input-focus-ring text-sm`} placeholder="Nama Pengirim" />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PIC Penerima <span className="text-red-500">*</span></label>
+                                                        <input type="text" value={formData.receiverPic} onChange={(e) => setFormData({...formData, receiverPic: e.target.value})} className={`w-full px-4 py-3.5 bg-white border ${errors.receiverPic ? 'border-red-300' : 'border-slate-200'} rounded-xl font-medium outline-none input-focus-ring text-sm`} placeholder="Nama Penerima" />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Keterangan / Alasan Mutasi</label>
-                                                <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={8} className="w-full p-5 border border-slate-200 rounded-2xl bg-slate-50/30 outline-none focus:border-blue-500 transition-all font-medium text-sm leading-relaxed" placeholder="Catatan kondisi barang, nomor proyek, atau instruksi khusus..." />
+                                            <div className="space-y-2 h-full flex flex-col">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Keterangan Tambahan</label>
+                                                <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} className="w-full flex-grow min-h-[150px] p-5 border border-slate-200 rounded-2xl bg-slate-50/50 outline-none input-focus-ring font-medium text-sm leading-relaxed resize-none" placeholder="Tuliskan catatan kondisi barang, nomor referensi proyek, atau instruksi khusus di sini..." />
                                             </div>
                                         </div>
-                                        <div className="flex justify-between border-t border-slate-100 pt-8"><button type="button" onClick={() => setActiveTab('product')} className="px-6 py-3 border border-slate-200 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-600">Kembali</button><button type="submit" onClick={handleSubmit} className="px-12 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3 active:scale-95">SIMPAN MUTASI</button></div>
+                                        <div className="flex justify-between pt-8 mt-4 border-t border-slate-100">
+                                            <button onClick={() => setActiveTab('product')} className="px-6 py-3 border border-slate-200 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors text-slate-600">Kembali</button>
+                                            <button onClick={handleReview} className={`hidden md:flex ${themeBg} text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg shadow-slate-200 transition-all hover:-translate-y-1 active:translate-y-0 items-center gap-3 ${themeBgHover}`}><i data-lucide="check-square" className="w-5 h-5"></i> Review & Konfirmasi</button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <GlobalFooter />
                     </div>
 
-                    <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-lg border-t border-slate-200 flex gap-3 z-50">
-                        <button onClick={() => setIsLanding(true)} className="p-3.5 bg-slate-100 text-slate-500 rounded-xl transition-all active:scale-95"><i data-lucide="rotate-ccw"></i></button>
-                        <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-100 active:scale-95 transition-all text-sm uppercase tracking-widest">Terbitkan PG</button>
+                    {showConfirm && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in overflow-hidden">
+                                <div className={`p-6 ${themeBg} text-white flex justify-between items-center`}>
+                                    <div className="flex items-center gap-3"><div className="p-2 bg-white/20 rounded-lg"><i data-lucide="check-circle-2" className="w-6 h-6"></i></div><div><h3 className="text-lg font-bold">Konfirmasi Mutasi</h3><p className="text-xs text-white/80">Periksa kembali data sebelum diterbitkan</p></div></div>
+                                    <button onClick={() => setShowConfirm(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors"><i data-lucide="x" className="w-5 h-5"></i></button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-grow space-y-6">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div><p className="text-xs text-slate-400">No. PG</p><p className="font-bold text-slate-700">{formData.pgNumber}</p></div>
+                                        <div><p className="text-xs text-slate-400">Tanggal</p><p className="font-bold text-slate-700">{formData.date}</p></div>
+                                        <div><p className="text-xs text-slate-400">Asal</p><p className="font-bold text-slate-700">{formData.origin}</p></div>
+                                        <div><p className="text-xs text-slate-400">Tujuan</p><p className="font-bold text-slate-700">{formData.destination}</p></div>
+                                        <div><p className="text-xs text-slate-400">Pengirim</p><p className="font-bold text-slate-700">{formData.senderPic}</p></div>
+                                        <div><p className="text-xs text-slate-400">Penerima</p><p className="font-bold text-slate-700">{formData.receiverPic}</p></div>
+                                    </div>
+                                    <div className="border-t border-slate-100 pt-4">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i data-lucide="list" className="w-4 h-4 text-slate-400"></i> Rincian Barang</h4>
+                                            <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">{detailItems.length} Item</span>
+                                        </div>
+                                        <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden max-h-[200px] overflow-y-auto scrollbar-hide">
+                                            <table className="w-full text-xs text-left">
+                                                <thead className="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0"><tr><th className="px-4 py-2 w-10 text-center">#</th><th className="px-4 py-2">Deskripsi</th></tr></thead>
+                                                <tbody className="divide-y divide-slate-200">
+                                                    {detailItems.map((item, i) => (
+                                                        <tr key={i}>
+                                                            <td className="px-4 py-2 text-center text-slate-400 font-mono">{i + 1}</td>
+                                                            <td className="px-4 py-2 font-medium text-slate-700">{item.name} {item.qty > 1 && <span className="ml-1 text-[10px] bg-slate-200 px-1 rounded">x{item.qty}</span>}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {detailItems.length === 0 && <tr><td colSpan="2" className="px-4 py-4 text-center text-slate-400 italic">Tidak ada rincian</td></tr>}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3">
+                                    <button onClick={() => setShowConfirm(false)} className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-white transition-colors">Batal</button>
+                                    <button onClick={handleSubmit} className={`flex-1 py-3 ${themeBg} text-white rounded-xl font-bold shadow-lg ${themeBgHover} transition-all flex items-center justify-center gap-2`}>
+                                        <i data-lucide="check" className="w-4 h-4"></i> Terbitkan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-200 flex gap-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                        <button onClick={() => setIsLanding(true)} className="p-3.5 bg-slate-100 text-slate-500 rounded-xl active:scale-95 transition-transform"><i data-lucide="rotate-ccw" className="w-5 h-5"></i></button>
+                        {activeTab === 'notes' ? (
+                            <button onClick={handleReview} className={`flex-1 ${themeBg} text-white rounded-xl font-bold shadow-lg shadow-slate-200 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2`}><i data-lucide="check-square" className="w-4 h-4"></i> Review</button>
+                        ) : (
+                            <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-xs font-bold text-slate-400 uppercase tracking-widest">{activeTab === 'logistics' ? 'Isi Logistik...' : 'Isi Rincian...'}</div>
+                        )}
                     </div>
                 </div>
             );
