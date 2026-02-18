@@ -99,7 +99,17 @@ const PRODUCT_TAXONOMY = {
   },
 
   // --- KATEGORI PART (PG-PART) ---
-  'Module': { type: 'PART', models: { 'MVIMDI3218': ['P1.86', 'P1.50', 'P2.00', 'P2.50'], 'MVIMDI1616': ['P2.50'], 'MVIMDI3216': ['P1.86', 'P2.50', 'P4.00'], 'MVIDI3216': ['P2.50'], 'MVIMDO3216': ['P4.00', 'P5.00', 'P6.00', 'P8.00', 'P10.00'] } },
+  'Module': { 
+    type: 'PART', 
+    needsModuleBatch: true, // Menandakan butuh kolom Batch tambahan setelah Model
+    models: { 
+      'MVIMDI3218': ['P1.86', 'P1.50', 'P2.00', 'P2.50'], 
+      'MVIMDI1616': ['P2.50'], 
+      'MVIMDI3216': ['P1.86', 'P2.50', 'P4.00'], 
+      'MVIDI3216': ['P2.50'], 
+      'MVIMDO3216': ['P4.00', 'P5.00', 'P6.00', 'P8.00', 'P10.00'] 
+    } 
+  },
   'Receiving Card': { type: 'PART', models: { 'MRV416': [], 'MRV432': [], 'MRV532': [] } },
   'Power Supply': { type: 'PART', models: { 'FPSU40A': [], 'PSU40A': [], 'PSU60A': [] } },
   'Kabel': { type: 'PART', models: { 'LAN': ['LAN1.0', 'LAN1.5', 'LAN2.0'], 'FLAT': ['20 CM', '50 CM', '70 CM', '80 CM'], 'POWER': ['5V TO MODULE', '73 CM DCI', '58 CM DCI2.5'] } },
@@ -126,6 +136,7 @@ const App = () => {
     destinationWarehouse: '', 
     category: '',
     model: '', 
+    batch: '', // State baru untuk Batch Module Part
     specification: '',
     productName: '',
     quantity: 1,
@@ -140,15 +151,14 @@ const App = () => {
     setIsLanding(false);
     setActiveTab('logistics');
     
-    // Generate nomor awal tapi bisa diedit
     const year = new Date().getFullYear();
     const rand = Math.floor(1000 + Math.random() * 9000);
     setFormData(prev => ({ 
       ...prev, 
       pgNumber: `PG/${type}/${year}/${rand}`,
-      // Reset produk saat berganti mode
       category: '',
       model: '',
+      batch: '',
       specification: '',
       productName: '',
       rawSN: '',
@@ -161,6 +171,7 @@ const App = () => {
       ...prev, 
       category: val, 
       model: '', 
+      batch: '',
       specification: '', 
       productName: val,
       rawSN: '', 
@@ -170,22 +181,50 @@ const App = () => {
   };
 
   const handleModelChange = (val) => {
-    const isBatch = PRODUCT_TAXONOMY[formData.category]?.isBatchMode;
-    setFormData(prev => ({ 
-      ...prev, 
-      model: val, 
-      productName: isBatch ? `${prev.category}-${val}` : `${prev.category} ${val}`
+    const taxonomy = PRODUCT_TAXONOMY[formData.category];
+    const isBatchUnit = taxonomy?.isBatchMode;
+    const isModulePart = taxonomy?.needsModuleBatch;
+
+    setFormData(prev => {
+      let newName = "";
+      if (isBatchUnit) {
+        newName = `${prev.category}-${val}`;
+      } else if (isModulePart) {
+        newName = `${prev.category}-${val}`;
+      } else {
+        newName = `${prev.category} ${val}`;
+      }
+
+      return {
+        ...prev,
+        model: val,
+        productName: newName
+      };
+    });
+  };
+
+  const handleBatchChange = (val) => {
+    setFormData(prev => ({
+      ...prev,
+      batch: val,
+      productName: prev.specification 
+        ? `${prev.category}-${prev.model}-${val}-${prev.specification.startsWith('P') ? prev.specification.substring(1) : prev.specification}`
+        : `${prev.category}-${prev.model}-${val}`
     }));
   };
 
   const handleSpecChange = (val) => {
     setFormData(prev => {
-      const isBatch = PRODUCT_TAXONOMY[prev.category]?.isBatchMode;
+      const taxonomy = PRODUCT_TAXONOMY[prev.category];
+      const isBatchUnit = taxonomy?.isBatchMode;
+      const isModulePart = taxonomy?.needsModuleBatch;
+      const cleanSpec = val.startsWith('P') ? val.substring(1) : val;
+
       let newName = "";
-      
-      if (isBatch) {
-        const cleanSpec = val.startsWith('P') ? val.substring(1) : val;
+      if (isBatchUnit) {
         newName = `${prev.category}-${prev.model}-${cleanSpec}`;
+      } else if (isModulePart) {
+        newName = `${prev.category}-${prev.model}-${prev.batch}-${cleanSpec}`;
       } else {
         newName = `${prev.category} ${prev.model} ${val}`;
       }
@@ -221,6 +260,7 @@ const App = () => {
     if (!formData.destinationWarehouse) newErrors.destinationWarehouse = true;
     if (!formData.category) newErrors.category = true;
     if (!formData.model) newErrors.model = true;
+    if (PRODUCT_TAXONOMY[formData.category]?.needsModuleBatch && !formData.batch) newErrors.batch = true;
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -241,6 +281,7 @@ const App = () => {
             destinationWarehouse: '', 
             category: '',
             model: '',
+            batch: '',
             specification: '',
             productName: '',
             quantity: 1,
@@ -253,7 +294,8 @@ const App = () => {
   };
 
   const currentCategory = PRODUCT_TAXONOMY[formData.category];
-  const isBatchMode = currentCategory?.isBatchMode || false;
+  const isBatchUnitMode = currentCategory?.isBatchMode || false;
+  const isModulePartMode = currentCategory?.needsModuleBatch || false;
   const isLockedQty = currentCategory?.isLockedQty || false;
   const needsSN = pgType === 'UNIT' && formData.category !== '';
 
@@ -330,7 +372,6 @@ const App = () => {
             <ProLogo />
           </div>
           <div className="flex items-center gap-3">
-            {/* PENGALIH MODE (UNIT / PART) DI NAVBAR */}
             <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
               <button 
                 onClick={() => handleStartMutasi('UNIT')}
@@ -377,7 +418,7 @@ const App = () => {
               {activeTab === 'logistics' && (
                 <div className="space-y-8 animate-in fade-in duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 text-left">
                       <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">No-PG</label>
                       <div className="relative">
                         <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18}/>
@@ -390,8 +431,8 @@ const App = () => {
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Tanggal Mutasi</label>
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Tanggal</label>
                       <input type="date" value={formData.date} onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))} className="w-full p-3.5 rounded-xl border border-slate-200 font-semibold outline-none focus:border-blue-500" />
                     </div>
                   </div>
@@ -401,8 +442,8 @@ const App = () => {
                       <ArrowLeftRight size={18} />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-2 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                      <div className="space-y-2">
                         <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide"><MapPin size={14} className="text-red-500"/> Gudang Asal</label>
                         <input 
                           type="text"
@@ -413,7 +454,7 @@ const App = () => {
                         />
                       </div>
 
-                      <div className="space-y-2 text-left">
+                      <div className="space-y-2">
                         <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide"><MapPin size={14} className="text-emerald-500"/> Gudang Destinasi</label>
                         <input 
                           type="text"
@@ -437,7 +478,7 @@ const App = () => {
               {/* TAB 2: PRODUCT DETAIL */}
               {activeTab === 'product' && (
                 <div className="space-y-8 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className={`grid grid-cols-1 ${isModulePartMode ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 text-left`}>
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-500 uppercase">Kategori</label>
                       <select 
@@ -452,9 +493,9 @@ const App = () => {
 
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-                        {isBatchMode ? "Batch" : "Model / Varian"}
+                        {isBatchUnitMode ? "Batch" : "Model / Varian"}
                       </label>
-                      {isBatchMode ? (
+                      {isBatchUnitMode ? (
                         <input 
                           type="text"
                           placeholder="Ketik batch manual..."
@@ -475,25 +516,39 @@ const App = () => {
                       )}
                     </div>
 
+                    {/* KOLOM BATCH TAMBAHAN KHUSUS MODULE PART */}
+                    {isModulePartMode && (
+                      <div className="space-y-2 animate-in fade-in duration-300">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Batch</label>
+                        <input 
+                          type="text"
+                          placeholder="Ketik batch manual..."
+                          className={`w-full p-3.5 bg-white rounded-xl border transition-all font-medium outline-none ${errors.batch ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                          value={formData.batch}
+                          onChange={(e) => handleBatchChange(e.target.value)}
+                        />
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sub Varian</label>
                       <select 
-                        disabled={!formData.model || (formData.category && !isBatchMode && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.length === 0)}
+                        disabled={!formData.model || (formData.category && !isBatchUnitMode && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.length === 0)}
                         className="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 disabled:opacity-50 font-medium outline-none"
                         value={formData.specification}
                         onChange={(e) => handleSpecChange(e.target.value)}
                       >
-                        <option value="">-- {isBatchMode ? 'Pilih Pitch' : 'Pilih Sub Varian'} --</option>
+                        <option value="">-- {isBatchUnitMode || isModulePartMode ? 'Pilih Pitch' : 'Pilih Sub Varian'} --</option>
                         {formData.category && (
-                          isBatchMode 
-                            ? PRODUCT_TAXONOMY[formData.category].models['Standard']?.map(s => <option key={s} value={s}>{s}</option>)
+                          isBatchUnitMode || isModulePartMode
+                            ? PRODUCT_TAXONOMY[formData.category].models[formData.model || 'Standard']?.map(s => <option key={s} value={s}>{s}</option>)
                             : PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)
                         )}
                       </select>
                     </div>
                   </div>
 
-                  <div className="p-5 bg-slate-900 rounded-xl shadow-inner">
+                  <div className="p-5 bg-slate-900 rounded-xl shadow-inner text-left">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 block tracking-widest leading-none">Barang Teridentifikasi</label>
                     <div className="text-white font-semibold text-lg flex items-center gap-3 uppercase">
                       <Box size={20} className="text-blue-400" />
@@ -502,7 +557,7 @@ const App = () => {
                   </div>
 
                   {needsSN && (
-                    <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
+                    <div className="space-y-4 animate-in slide-in-from-top-4 duration-500 text-left">
                       <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2 text-blue-900">
@@ -551,7 +606,7 @@ const App = () => {
                   )}
 
                   {!needsSN && (
-                    <div className="grid grid-cols-2 gap-4 max-w-sm">
+                    <div className="grid grid-cols-2 gap-4 max-w-sm text-left">
                       <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Jumlah</label>
                         <input type="number" min="1" className="w-full p-3.5 rounded-xl border border-slate-200 font-bold text-blue-600 outline-none" value={formData.quantity} onChange={(e) => setFormData(p => ({ ...p, quantity: parseInt(e.target.value) || 0 }))} />
@@ -579,7 +634,7 @@ const App = () => {
               {/* TAB 3: NOTES */}
               {activeTab === 'notes' && (
                 <div className="space-y-8 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Petugas Penanggung Jawab (PIC)</label>
@@ -599,6 +654,7 @@ const App = () => {
                           <div className="flex justify-between border-b border-white/10 pb-2"><span>Barang:</span> <span className="text-blue-300 font-bold truncate max-w-[200px]">{formData.productName}</span></div>
                           <div className="flex justify-between border-b border-white/10 pb-2"><span>Dari:</span> <span>{formData.originWarehouse || "-"}</span></div>
                           <div className="flex justify-between border-b border-white/10 pb-2"><span>Ke:</span> <span>{formData.destinationWarehouse || "-"}</span></div>
+                          <div className="flex justify-between border-b border-white/10 pb-2"><span>Tanggal:</span> <span>{formData.date}</span></div>
                           <div className="flex justify-between pt-2"><span>Total:</span> <span className="text-blue-400 font-bold">{formData.quantity} {formData.unit}</span></div>
                         </div>
                       </div>
