@@ -1,341 +1,376 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Trash2, 
-  Package, 
-  ArrowLeftRight, 
-  Tag, 
-  Save, 
-  RotateCcw, 
-  CheckCircle2,
-  ChevronRight, 
-  ChevronLeft, 
-  Barcode, 
-  Cpu, 
-  MapPin, 
-  ClipboardList, 
-  Truck, 
-  Box, 
-  Hash, 
-  X, 
-  ArrowRight, 
-  Activity 
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MV-LOGISTIK - Solusi Inventaris Terpadu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX parsing -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Animasi transisi halus */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 300s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
 
-// --- LOGO & FOOTER ---
-const ProLogo = () => (
-  <div className="flex items-center gap-3">
-    <div className="relative flex items-center justify-center w-10 h-10 bg-slate-900 text-white rounded-lg shadow-sm">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6">
-        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
-      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
-    </div>
-    <div className="flex flex-col text-left">
-      <span className="text-lg font-bold tracking-tight leading-none text-slate-800">MV-LOGISTIK</span>
-      <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-blue-600">Solusi Inventaris Terpadu</span>
-    </div>
-  </div>
-);
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-const GlobalFooter = () => (
-  <footer className="mt-12 mb-8 text-center opacity-80">
-    <div className="inline-flex flex-col items-center gap-2">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">
-        Manajemen Inventaris Microvision
-      </p>
-      <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest bg-white border border-slate-100 px-3 py-1 rounded-full">
-        Versi 1.7.5
-      </span>
-    </div>
-  </footer>
-);
-
-// --- DATA TAKSONOMI ---
-const PRODUCT_TAXONOMY = {
-  // --- PG-UNIT ---
-  'MVIFCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '2.50', '4.00'] } },
-  'MVIDCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '1.50', '2.00', '2.50'] } },
-  'MVIFCO': { type: 'UNIT', isBatch: true, models: { 'Standard': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
-  'KIOSK': { type: 'UNIT', needsSN: true, models: { 'Standard': [], 'SLIM': [] } },
-  'IFP': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['65"', '75"', '86"'], 'NEWLINE': ['65"', '75"', '86"'], 'PHILIPS': ['65"', '75"', '86"'] } },
-  'VDW': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['4935', '5535', '5517', '5588'], 'PHILIPS': ['49BDL2105X-ik', '55BDL2105X-ik'] } },
-  // --- PG-PART ---
-  'Module': { type: 'PART', isBatch: true, models: { 'MVIMDI3218': ['1.86', '1.50', '2.00', '2.50'], 'MVIMDI1616': ['2.50'], 'MVIMDI3216': ['1.86', '2.50', '4.00'], 'MVIDI3216': ['2.50'], 'MVIMDO3216': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
-  'Receiving Card': { type: 'PART', models: { 'MRV416': [], 'MRV432': [], 'MRV532': [] } },
-  'Power Supply': { type: 'PART', models: { 'FPSU40A': [], 'PSU40A': [], 'PSU60A': [] } },
-  'Kabel': { type: 'PART', models: { 'LAN': ['1.0', '1.5', '2.0'], 'FLAT': ['20 CM', '50 CM', '70 CM', '80 CM'], 'POWER': ['5V TO MODULE', '73 CM DCI', '58 CM DCI2.5'] } },
-  'Sparepart': { type: 'PART', models: { 'IC-MDL': [], 'LED-LAMP': [], 'FACE MASK': [] } },
-  'Lainnya': { type: 'PART', models: { 'Baut Magnet': [], 'Konektor': [], 'Bracket': [], 'Karet': [], 'Kardus/Palet': [] } }
-};
-
-const App = () => {
-  const [isLanding, setIsLanding] = useState(true);
-  const [activeTab, setActiveTab] = useState('logistics');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [pgType, setPgType] = useState('UNIT'); 
-  const [errors, setErrors] = useState({});
-  
-  const [formData, setFormData] = useState({
-    pgNumber: '',
-    date: new Date().toISOString().split('T')[0],
-    origin: '', 
-    destination: '', 
-    category: '',
-    model: '', 
-    batch: '',
-    subVarian: '',
-    productName: '',
-    quantity: 1,
-    unit: 'Unit',
-    pic: '',
-    notes: '',
-    rawSN: '' 
-  });
-
-  // --- Navigasi & Mode ---
-  const handleStart = (type) => {
-    setPgType(type);
-    setIsLanding(false);
-    setActiveTab('logistics');
-    setFormData(prev => ({ ...prev, pgNumber: `PG/${type}/${new Date().getFullYear()}/` }));
-  };
-
-  const handleCategoryChange = (val) => {
-    setFormData(prev => ({ 
-      ...prev, category: val, model: '', batch: '', subVarian: '', 
-      productName: val, rawSN: '', quantity: 1, unit: pgType === 'UNIT' ? 'Unit' : 'Pcs'
-    }));
-  };
-
-  // --- Penamaan Otomatis ---
-  useEffect(() => {
-    if (!formData.category) return;
-    const cat = PRODUCT_TAXONOMY[formData.category];
-    let name = formData.category;
-    
-    if (formData.model) name += `-${formData.model}`;
-    if (formData.batch) name += `-${formData.batch}`;
-    if (formData.subVarian) name += `-${formData.subVarian}`;
-    
-    setFormData(prev => ({ ...prev, productName: name.toUpperCase() }));
-  }, [formData.category, formData.model, formData.batch, formData.subVarian]);
-
-  const handleSNChange = (val) => {
-    const taxonomy = PRODUCT_TAXONOMY[formData.category];
-    const lines = val.split('\n').filter(line => line.trim() !== '');
-    setFormData(prev => ({
-      ...prev,
-      rawSN: val,
-      quantity: (taxonomy?.needsSN) ? (lines.length || 0) : prev.quantity
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.pgNumber || !formData.origin || !formData.destination || !formData.category) {
-      setErrors({ pg: !formData.pgNumber, org: !formData.origin, dest: !formData.destination, cat: !formData.category });
-      return;
-    }
-    setShowSuccess(true);
-    setTimeout(() => { setShowSuccess(false); setIsLanding(true); }, 3000);
-  };
-
-  // UI State Check
-  const currentTax = PRODUCT_TAXONOMY[formData.category];
-  const isBatchMode = currentTax?.isBatch || false;
-  const isSNMode = currentTax?.needsSN || false;
-
-  if (isLanding) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 flex-col">
-      <div className="max-w-4xl w-full text-center animate-in fade-in duration-700">
-        <div className="flex justify-center mb-8"><ProLogo /></div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">Sistem Manajemen Logistik</h1>
-        <p className="text-slate-500 mb-12">Pilih jenis mutasi untuk memulai pencatatan barang</p>
-        <div className="grid md:grid-cols-2 gap-6">
-          <button onClick={() => handleStart('UNIT')} className="bg-white p-10 rounded-2xl border hover:border-blue-500 hover:shadow-xl transition-all text-left group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all"><Box size={24}/></div>
-            <h2 className="text-xl font-bold mb-2">PG-UNIT</h2>
-            <p className="text-sm text-slate-400">Unit Rakitan & Monitor</p>
-          </button>
-          <button onClick={() => handleStart('PART')} className="bg-white p-10 rounded-2xl border hover:border-slate-800 hover:shadow-xl transition-all text-left group">
-            <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-slate-800 group-hover:text-white transition-all"><Cpu size={24}/></div>
-            <h2 className="text-xl font-bold mb-2">PG-PART</h2>
-            <p className="text-sm text-slate-400">Suku Cadang & Komponen</p>
-          </button>
-        </div>
-      </div>
-      <GlobalFooter />
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-left">
-      <nav className="sticky top-0 z-50 bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="cursor-pointer" onClick={() => setIsLanding(true)}><ProLogo /></div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border">
-            <button onClick={() => handleStart('UNIT')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'UNIT' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>UNIT</button>
-            <button onClick={() => handleStart('PART')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'PART' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}>PART</button>
-          </div>
-          <button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-blue-200 shadow-lg"><Save size={16}/> Terbitkan</button>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto w-full px-4 pt-8 flex-grow">
-        {showSuccess && (
-          <div className="mb-6 p-4 bg-emerald-500 text-white rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4">
-            <CheckCircle2 size={20}/> <span className="font-bold">Mutasi Berhasil Disimpan!</span>
-          </div>
-        )}
-
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden mb-12">
-          <div className="flex border-b bg-slate-50/30">
-            <button onClick={() => setActiveTab('logistics')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 ${activeTab === 'logistics' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400'}`}><Truck size={16}/> Logistik</button>
-            <button onClick={() => setActiveTab('product')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 ${activeTab === 'product' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400'}`}><Package size={16}/> Detail</button>
-            <button onClick={() => setActiveTab('notes')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 ${activeTab === 'notes' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400'}`}><ClipboardList size={16}/> Catatan</button>
-          </div>
-
-          <div className="p-8">
-            {activeTab === 'logistics' && (
-              <div className="space-y-8 animate-in fade-in duration-300">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">No-PG</label>
-                    <input type="text" value={formData.pgNumber} onChange={(e) => setFormData({...formData, pgNumber: e.target.value})} className={`w-full p-3.5 border rounded-xl font-mono font-bold text-blue-600 outline-none ${errors.pg ? 'border-red-400 bg-red-50' : 'focus:border-blue-500'}`} placeholder="Ketik nomor..." />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">Tanggal</label>
-                    <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full p-3.5 border rounded-xl font-semibold outline-none focus:border-blue-500" />
-                  </div>
+        // --- KOMPONEN LOGO GAMBAR ---
+        const ProLogo = () => (
+            <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center overflow-hidden">
+                    <img 
+                        src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true" 
+                        alt="Microvision Logo" 
+                        className="h-10 md:h-12 w-auto object-contain"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/150x50?text=MICROVISION';
+                        }}
+                    />
                 </div>
-                <div className="bg-slate-50 p-8 rounded-2xl border grid sm:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={14} className="text-red-500"/> Gudang Asal</label>
-                    <input type="text" value={formData.origin} onChange={(e) => setFormData({...formData, origin: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all ${errors.org ? 'border-red-400 bg-red-50' : 'focus:border-blue-500'}`} placeholder="Nama gudang asal..." />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={14} className="text-emerald-500"/> Gudang Tujuan</label>
-                    <input type="text" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all ${errors.dest ? 'border-red-400 bg-red-50' : 'focus:border-blue-500'}`} placeholder="Nama gudang tujuan..." />
-                  </div>
+                <div className="flex flex-col text-left border-l border-slate-200 pl-3">
+                    <span className="text-sm font-bold tracking-widest text-slate-800 uppercase">LOGISTIK</span>
+                    <span className="text-[9px] font-semibold tracking-[0.1em] uppercase text-blue-600 leading-tight">Solusi Inventaris Terpadu</span>
                 </div>
-                <div className="flex justify-end"><button type="button" onClick={() => setActiveTab('product')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all shadow-lg">Lanjut ke Produk <ChevronRight size={18}/></button></div>
-              </div>
-            )}
+            </div>
+        );
 
-            {activeTab === 'product' && (
-              <div className="space-y-8 animate-in fade-in duration-300">
-                <div className={`grid grid-cols-1 ${isBatchMode ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">Kategori</label>
-                    <select value={formData.category} onChange={(e) => handleCategoryChange(e.target.value)} className={`w-full p-3.5 border rounded-xl outline-none ${errors.cat ? 'border-red-400' : 'focus:border-blue-500'}`}>
-                      <option value="">-- Pilih --</option>
-                      {Object.keys(PRODUCT_TAXONOMY).filter(c => PRODUCT_TAXONOMY[c].type === pgType).map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  {isBatchMode ? (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">Batch</label>
-                        <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border rounded-xl outline-none focus:border-blue-500" placeholder="Ketik batch..." />
-                      </div>
-                      <div className="md:col-span-2 space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">Pitch</label>
-                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border rounded-xl outline-none focus:border-blue-500">
-                          <option value="">-- Pilih Pitch --</option>
-                          {PRODUCT_TAXONOMY[formData.category]?.models['Standard']?.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">Model</label>
-                        <select value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border rounded-xl outline-none focus:border-blue-500">
-                          <option value="">-- Pilih --</option>
-                          {formData.category && Object.keys(PRODUCT_TAXONOMY[formData.category].models).map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">Sub Varian</label>
-                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border rounded-xl outline-none focus:border-blue-500">
-                          <option value="">-- Pilih --</option>
-                          {formData.category && formData.model && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
-                    </>
-                  )}
+        // --- KOMPONEN FOOTER ---
+        const GlobalFooter = () => (
+            <footer className="mt-12 mb-8 text-center opacity-80">
+                <div className="inline-flex flex-col items-center gap-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">
+                        Manajemen Inventaris Microvision
+                    </p>
+                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest bg-white border border-slate-100 px-3 py-1 rounded-full shadow-sm">
+                        Versi 1.7.5
+                    </span>
                 </div>
+            </footer>
+        );
 
-                <div className="p-6 bg-slate-900 rounded-xl space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Identitas Barang</label>
-                    <div className="text-white font-bold text-xl flex items-center gap-3">{formData.productName || "MENUNGGU PILIHAN..."}</div>
-                  </div>
-                  {needsSN && (
-                    <div className="animate-in slide-in-from-top-4 duration-500 pt-4 border-t border-white/10">
-                      <div className="flex justify-between items-center mb-3">
-                         <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-widest"><Hash size={14}/> Masukkan Nomor Seri (SN)</div>
-                         {isSNMode && <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-black uppercase">Mode Unit</span>}
-                      </div>
-                      <textarea value={formData.rawSN} onChange={(e) => handleSNChange(e.target.value)} rows={5} placeholder={isSNMode ? "Tekan ENTER untuk baris SN berikutnya..." : "Ketik rentang SN (Contoh: 01-10)..."} className="w-full p-4 bg-slate-800 border-none rounded-xl text-white font-mono text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none" />
+        // --- DATA TAKSONOMI ---
+        const PRODUCT_TAXONOMY = {
+            'MVIFCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '2.50', '4.00'] } },
+            'MVIDCI': { type: 'UNIT', isBatch: true, models: { 'Standard': ['1.86', '1.50', '2.00', '2.50'] } },
+            'MVIFCO': { type: 'UNIT', isBatch: true, models: { 'Standard': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
+            'KIOSK': { type: 'UNIT', needsSN: true, models: { 'Standard': [], 'SLIM': [] } },
+            'IFP': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['65"', '75"', '86"'], 'NEWLINE': ['65"', '75"', '86"'], 'PHILIPS': ['65"', '75"', '86"'] } },
+            'VDW': { type: 'UNIT', needsSN: true, models: { 'MICROVISION': ['4935', '5535', '5517', '5588'], 'PHILIPS': ['49BDL2105X-ik', '55BDL2105X-ik'] } },
+            'Module': { type: 'PART', isBatch: true, models: { 'MVIMDI3218': ['1.86', '1.50', '2.00', '2.50'], 'MVIMDI1616': ['2.50'], 'MVIMDI3216': ['1.86', '2.50', '4.00'], 'MVIDI3216': ['2.50'], 'MVIMDO3216': ['4.00', '5.00', '6.00', '8.00', '10.00'] } },
+            'Receiving Card': { type: 'PART', models: { 'MRV416': [], 'MRV432': [], 'MRV532': [] } },
+            'Power Supply': { type: 'PART', models: { 'FPSU40A': [], 'PSU40A': [], 'PSU60A': [] } },
+            'Kabel': { type: 'PART', models: { 'LAN': ['1.0', '1.5', '2.0'], 'FLAT': ['20 CM', '50 CM', '70 CM', '80 CM'], 'POWER': ['5V TO MODULE', '73 CM DCI', '58 CM DCI2.5'] } },
+            'Sparepart': { type: 'PART', models: { 'IC-MDL': [], 'LED-LAMP': [], 'FACE MASK': [] } },
+            'Lainnya': { type: 'PART', models: { 'Baut Magnet': [], 'Konektor': [], 'Bracket': [], 'Karet': [], 'Kardus/Palet': [] } }
+        };
+
+        const App = () => {
+            const [isLanding, setIsLanding] = useState(true);
+            const [activeTab, setActiveTab] = useState('logistics');
+            const [showSuccess, setShowSuccess] = useState(false);
+            const [pgType, setPgType] = useState('UNIT'); 
+            const [errors, setErrors] = useState({});
+            
+            const [formData, setFormData] = useState({
+                pgNumber: '',
+                date: new Date().toISOString().split('T')[0],
+                origin: '', 
+                destination: '', 
+                category: '',
+                model: '', 
+                batch: '',
+                subVarian: '',
+                productName: '',
+                quantity: 1,
+                unit: 'Unit',
+                pic: '',
+                notes: '',
+                rawSN: '' 
+            });
+
+            useEffect(() => { lucide.createIcons(); });
+
+            const handleStart = (type) => {
+                setPgType(type);
+                setIsLanding(false);
+                setActiveTab('logistics');
+                const year = new Date().getFullYear();
+                setFormData(prev => ({ 
+                    ...prev, 
+                    pgNumber: `PG/${type}/${year}/`,
+                    category: '', model: '', batch: '', subVarian: '', productName: '', rawSN: '', quantity: 1
+                }));
+            };
+
+            const handleCategoryChange = (val) => {
+                setFormData(prev => ({ 
+                    ...prev, category: val, model: '', batch: '', subVarian: '', 
+                    productName: val, rawSN: '', quantity: 1, unit: pgType === 'UNIT' ? 'Unit' : 'Pcs'
+                }));
+            };
+
+            useEffect(() => {
+                if (!formData.category) return;
+                let name = formData.category;
+                if (formData.model) name += `-${formData.model}`;
+                if (formData.batch) name += `-${formData.batch}`;
+                if (formData.subVarian) {
+                    const cleanSpec = formData.subVarian.startsWith('P') ? formData.subVarian.substring(1) : formData.subVarian;
+                    name += `-${cleanSpec}`;
+                }
+                setFormData(prev => ({ ...prev, productName: name.toUpperCase() }));
+            }, [formData.category, formData.model, formData.batch, formData.subVarian]);
+
+            const handleSNChange = (val) => {
+                const taxonomy = PRODUCT_TAXONOMY[formData.category];
+                const lines = val.split('\n').filter(line => line.trim() !== '');
+                setFormData(prev => ({
+                    ...prev,
+                    rawSN: val,
+                    quantity: taxonomy?.needsSN ? (lines.length || 0) : prev.quantity
+                }));
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.pgNumber || !formData.origin || !formData.destination || !formData.category) {
+                    setErrors({ pg: !formData.pgNumber, org: !formData.origin, dest: !formData.destination, cat: !formData.category });
+                    return;
+                }
+                setShowSuccess(true);
+                setTimeout(() => { setShowSuccess(false); setIsLanding(true); }, 3000);
+            };
+
+            const currentTax = PRODUCT_TAXONOMY[formData.category];
+            const isBatchMode = currentTax?.isBatch || false;
+            const isSNMode = currentTax?.needsSN || false;
+
+            if (isLanding) return (
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 flex-col">
+                    <div className="max-w-4xl w-full text-center">
+                        <div className="flex justify-center mb-10 scale-125 md:scale-150">
+                            <img 
+                                src="https://github.com/MVI-PDN/Keluhan-Pelanggan/blob/main/microvision-logo.webp?raw=true" 
+                                alt="Microvision" 
+                                className="h-16 md:h-20 w-auto"
+                            />
+                        </div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 mt-4">Logistik & Mutasi Gudang</h1>
+                        <p className="text-slate-500 mb-12 text-sm md:text-base">Silakan pilih jenis dokumen untuk memulai pencatatan mutasi barang</p>
+                        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                            <button onClick={() => handleStart('UNIT')} className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl transition-all text-left group">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                    <i data-lucide="box"></i>
+                                </div>
+                                <h2 className="text-lg font-bold text-slate-800">PG-UNIT</h2>
+                                <p className="text-xs text-slate-400 mt-1">Mutasi Unit Rakitan & Monitor</p>
+                            </button>
+                            <button onClick={() => handleStart('PART')} className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-slate-800 hover:shadow-xl transition-all text-left group">
+                                <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-slate-800 group-hover:text-white transition-all">
+                                    <i data-lucide="cpu"></i>
+                                </div>
+                                <h2 className="text-lg font-bold text-slate-800">PG-PART</h2>
+                                <p className="text-xs text-slate-400 mt-1">Mutasi Suku Cadang & Komponen</p>
+                            </button>
+                        </div>
                     </div>
-                  )}
+                    <GlobalFooter />
                 </div>
+            );
 
-                <div className="grid grid-cols-2 gap-4 max-w-xs">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">Jumlah</label>
-                    <input type="number" readOnly={isSNMode} value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} className={`w-full p-3.5 border rounded-xl font-bold text-blue-600 outline-none ${isSNMode ? 'bg-slate-50 cursor-not-allowed opacity-60' : 'focus:border-blue-500'}`} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">Satuan</label>
-                    <select value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="w-full p-3.5 border rounded-xl font-bold outline-none focus:border-blue-500">
-                      <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-between border-t pt-6"><button type="button" onClick={() => setActiveTab('logistics')} className="px-6 py-3 border rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50">Kembali</button><button type="button" onClick={() => setActiveTab('notes')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg">Catatan & PIC <ChevronRight size={18}/></button></div>
-              </div>
-            )}
+            return (
+                <div className="min-h-screen bg-slate-50 flex flex-col text-left">
+                    <nav className="sticky top-0 z-50 bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
+                        <div className="cursor-pointer" onClick={() => setIsLanding(true)}><ProLogo /></div>
+                        <div className="flex items-center gap-3">
+                            <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                <button onClick={() => handleStart('UNIT')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'UNIT' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}`}>UNIT</button>
+                                <button onClick={() => handleStart('PART')} className={`px-4 py-1.5 text-[10px] font-bold rounded-md ${pgType === 'PART' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400'}`}>PART</button>
+                            </div>
+                            <button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-blue-200 shadow-lg hover:bg-blue-700 transition-colors"><i data-lucide="save" className="w-4 h-4"></i> Terbitkan</button>
+                        </div>
+                    </nav>
 
-            {activeTab === 'notes' && (
-              <div className="space-y-8 animate-in fade-in duration-300">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="space-y-6 text-left">
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Petugas Penanggung Jawab (PIC)</label>
-                      <input type="text" value={formData.pic} onChange={(e) => setFormData({...formData, pic: e.target.value})} className="w-full p-3.5 border rounded-xl font-semibold outline-none focus:border-blue-500" placeholder="Nama lengkap..." />
+                    <div className="max-w-5xl mx-auto w-full px-4 pt-8 flex-grow">
+                        {showSuccess && (
+                            <div className="mb-6 p-4 bg-emerald-500 text-white rounded-xl flex items-center gap-3 animate-pulse shadow-lg">
+                                <i data-lucide="check-circle-2"></i> <span className="font-bold">Transaksi Berhasil Disimpan!</span>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
+                            <div className="flex border-b bg-slate-50/30 overflow-x-auto scrollbar-hide">
+                                <button onClick={() => setActiveTab('logistics')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'logistics' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="truck" className="w-4 h-4"></i> Logistik</button>
+                                <button onClick={() => setActiveTab('product')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'product' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="package" className="w-4 h-4"></i> Detail</button>
+                                <button onClick={() => setActiveTab('notes')} className={`px-8 py-4 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${activeTab === 'notes' ? 'border-b-2 border-blue-600 text-blue-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="clipboard-list" className="w-4 h-4"></i> Catatan</button>
+                            </div>
+
+                            <div className="p-6 md:p-8">
+                                {activeTab === 'logistics' && (
+                                    <div className="space-y-8 animate-in fade-in duration-300">
+                                        <div className="grid sm:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase">No-PG</label>
+                                                <input type="text" value={formData.pgNumber} onChange={(e) => setFormData({...formData, pgNumber: e.target.value})} className={`w-full p-3.5 border rounded-xl font-mono font-bold text-blue-600 outline-none transition-all ${errors.pg ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Masukkan No-PG..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Tanggal</label>
+                                                <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-semibold outline-none focus:border-blue-500" />
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 grid sm:grid-cols-2 gap-8 relative">
+                                            <div className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-300 z-10">
+                                                <i data-lucide="arrow-right-left" className="w-4 h-4"></i>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i data-lucide="map-pin" className="w-4 h-4 text-red-500"></i> Gudang Asal</label>
+                                                <input type="text" value={formData.origin} onChange={(e) => setFormData({...formData, origin: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all bg-white ${errors.org ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Nama gudang asal..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest"><i data-lucide="map-pin" className="w-4 h-4 text-emerald-500"></i> Gudang Tujuan</label>
+                                                <input type="text" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} className={`w-full p-3.5 border rounded-xl outline-none transition-all bg-white ${errors.dest ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-500'}`} placeholder="Nama gudang tujuan..." />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end"><button type="button" onClick={() => setActiveTab('product')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all shadow-lg">Lanjut <i data-lucide="chevron-right" className="w-4 h-4"></i></button></div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'product' && (
+                                    <div className="space-y-8 animate-in fade-in duration-300">
+                                        <div className={`grid grid-cols-1 ${isBatchMode ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Kategori</label>
+                                                <select value={formData.category} onChange={(e) => handleCategoryChange(e.target.value)} className={`w-full p-3.5 border rounded-xl outline-none bg-white font-medium ${errors.cat ? 'border-red-400' : 'border-slate-200 focus:border-blue-500'}`}>
+                                                    <option value="">-- Pilih --</option>
+                                                    {Object.keys(PRODUCT_TAXONOMY).filter(c => PRODUCT_TAXONOMY[c].type === pgType).map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                            </div>
+                                            {isBatchMode ? (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Batch</label>
+                                                        <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium" placeholder="Ketik batch..." />
+                                                    </div>
+                                                    <div className="md:col-span-2 space-y-2">
+                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Pitch / Sub Varian</label>
+                                                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
+                                                            <option value="">-- Pilih --</option>
+                                                            {PRODUCT_TAXONOMY[formData.category]?.models['Standard'] ? 
+                                                                PRODUCT_TAXONOMY[formData.category].models['Standard'].map(s => <option key={s} value={s}>{s}</option>) :
+                                                                formData.model && PRODUCT_TAXONOMY[formData.category]?.models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Varian / Model</label>
+                                                        <select value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
+                                                            <option value="">-- Pilih --</option>
+                                                            {formData.category && Object.keys(PRODUCT_TAXONOMY[formData.category].models).map(m => <option key={m} value={m}>{m}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[11px] font-bold text-slate-400 uppercase">Sub Varian</label>
+                                                        <select value={formData.subVarian} onChange={(e) => setFormData({...formData, subVarian: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium bg-white">
+                                                            <option value="">-- Pilih --</option>
+                                                            {formData.category && formData.model && PRODUCT_TAXONOMY[formData.category].models[formData.model]?.map(s => <option key={s} value={s}>{s}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        <div className="p-6 bg-slate-900 rounded-2xl space-y-5 shadow-inner">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block opacity-70">Identifikasi Barang</label>
+                                                <div className="text-white font-bold text-xl flex items-center gap-3 uppercase">{formData.productName || "MENUNGGU PILIHAN..."}</div>
+                                            </div>
+                                            {pgType === 'UNIT' && formData.category && (
+                                                <div className="pt-5 border-t border-white/10 animate-in slide-in-from-top-2 duration-500">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-widest"><i data-lucide="hash" className="w-4 h-4"></i> Masukkan Serial Number (SN)</div>
+                                                        {isSNMode && <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-black uppercase shadow-lg">Mode Per Unit</span>}
+                                                    </div>
+                                                    <textarea value={formData.rawSN} onChange={(e) => handleSNChange(e.target.value)} rows={5} placeholder={isSNMode ? "Tekan ENTER untuk baris SN berikutnya..." : "Ketik rentang SN (Contoh: 01-10)..."} className="w-full p-4 bg-slate-800 border-none rounded-xl text-white font-mono text-sm focus:ring-2 focus:ring-blue-500/50 outline-none resize-none shadow-inner" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 max-w-sm">
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Jumlah</label>
+                                                <input type="number" readOnly={isSNMode} value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} className={`w-full p-3.5 border rounded-xl font-bold text-blue-600 outline-none transition-all ${isSNMode ? 'bg-slate-50 cursor-not-allowed opacity-60 border-slate-100' : 'border-slate-200 focus:border-blue-500'}`} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase">Satuan</label>
+                                                <select value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-bold outline-none focus:border-blue-500 bg-white">
+                                                    <option>Unit</option><option>Pcs</option><option>Box</option><option>Roll</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between border-t border-slate-100 pt-6"><button type="button" onClick={() => setActiveTab('logistics')} className="px-6 py-3 border border-slate-200 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-600">Kembali</button><button type="button" onClick={() => setActiveTab('notes')} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-black transition-all">Lanjut <i data-lucide="chevron-right" className="w-4 h-4"></i></button></div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'notes' && (
+                                    <div className="space-y-8 animate-in fade-in duration-300">
+                                        <div className="grid md:grid-cols-2 gap-8">
+                                            <div className="space-y-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Petugas Penanggung Jawab (PIC)</label>
+                                                    <input type="text" value={formData.pic} onChange={(e) => setFormData({...formData, pic: e.target.value})} className="w-full p-3.5 border border-slate-200 rounded-xl font-semibold outline-none focus:border-blue-500 transition-all" placeholder="Nama lengkap..." />
+                                                </div>
+                                                <div className="p-6 bg-slate-900 rounded-2xl border-l-4 border-blue-500 text-white space-y-4 shadow-xl">
+                                                    <h4 className="text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"><i data-lucide="activity" className="w-3 h-3"></i> Ringkasan Transaksi</h4>
+                                                    <div className="space-y-3 text-[13px] opacity-90 font-medium">
+                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>No-PG:</span> <span className="font-mono font-bold">{formData.pgNumber}</span></div>
+                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>Asal:</span> <span>{formData.origin || "-"}</span></div>
+                                                        <div className="flex justify-between border-b border-white/5 pb-1"><span>Tujuan:</span> <span>{formData.destination || "-"}</span></div>
+                                                        <div className="flex justify-between pt-1"><span>Total Unit:</span> <span className="text-blue-400 font-bold text-lg">{formData.quantity} {formData.unit}</span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Keterangan / Alasan Mutasi</label>
+                                                <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={8} className="w-full p-5 border border-slate-200 rounded-2xl bg-slate-50/30 outline-none focus:border-blue-500 transition-all font-medium text-sm leading-relaxed" placeholder="Catatan kondisi barang, nomor proyek, atau instruksi khusus..." />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between border-t border-slate-100 pt-8"><button type="button" onClick={() => setActiveTab('product')} className="px-6 py-3 border border-slate-200 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-600">Kembali</button><button type="submit" onClick={handleSubmit} className="px-12 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3 active:scale-95">SIMPAN MUTASI</button></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <GlobalFooter />
                     </div>
-                    <div className="p-6 bg-slate-900 rounded-2xl border-l-4 border-blue-500 text-white space-y-3 shadow-xl">
-                      <h4 className="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Ringkasan Mutasi</h4>
-                      <div className="space-y-2 text-xs opacity-90 font-medium">
-                        <div className="flex justify-between border-b border-white/5 pb-1"><span>No-PG:</span> <span className="font-mono">{formData.pgNumber}</span></div>
-                        <div className="flex justify-between border-b border-white/5 pb-1"><span>Gudang:</span> <span>{formData.origin} → {formData.destination}</span></div>
-                        <div className="flex justify-between pt-1"><span>Total:</span> <span className="text-blue-400 font-bold">{formData.quantity} {formData.unit}</span></div>
-                      </div>
+
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-lg border-t border-slate-200 flex gap-3 z-50">
+                        <button onClick={() => setIsLanding(true)} className="p-3.5 bg-slate-100 text-slate-500 rounded-xl transition-all active:scale-95"><i data-lucide="rotate-ccw"></i></button>
+                        <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-100 active:scale-95 transition-all text-sm uppercase tracking-widest">Terbitkan PG</button>
                     </div>
-                  </div>
-                  <div className="space-y-2 text-left">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Keterangan Tambahan</label>
-                    <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={8} className="w-full p-5 border rounded-2xl bg-slate-50/30 outline-none focus:border-blue-500 transition-all" placeholder="Catatan kondisi barang atau detail proyek..." />
-                  </div>
                 </div>
-                <div className="flex justify-between border-t pt-8"><button type="button" onClick={() => setActiveTab('product')} className="px-6 py-3 border rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50">Kembali</button><button type="submit" onClick={handleSubmit} className="px-12 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-3">SIMPAN DOKUMEN</button></div>
-              </div>
-            )}
-          </div>
-        </div>
-        <GlobalFooter />
-      </div>
+            );
+        };
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-lg border-t flex gap-3 z-50">
-        <button onClick={() => setIsLanding(true)} className="p-3.5 bg-slate-100 text-slate-500 rounded-xl"><RotateCcw size={20}/></button>
-        <button onClick={handleSubmit} className="flex-1 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Terbitkan PG</button>
-      </div>
-    </div>
-  );
-};
-
-export default App;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
